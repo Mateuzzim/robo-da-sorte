@@ -1,0 +1,3489 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Robô da Sorte</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        /* Reset e Fonte Futurista */
+        body { font-family: 'Exo 2', sans-serif; margin: 0; padding: 0; background: radial-gradient(circle at top, #1b2735 0%, #090a0f 100%); color: #e0e6ed; min-height: 100vh; }
+        
+        /* Navbar Glassmorphism */
+        .navbar { background: rgba(10, 15, 30, 0.85); border-bottom: 1px solid rgba(0, 210, 255, 0.3); padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; backdrop-filter: blur(10px); box-shadow: 0 0 20px rgba(0, 210, 255, 0.1); animation: slideDownFade 0.8s ease-out; }
+        .brand { font-size: 22px; font-weight: 800; display: flex; align-items: center; gap: 10px; color: #00d2ff; text-shadow: 0 0 10px rgba(0, 210, 255, 0.6); letter-spacing: 1px; }
+        .nav-links { display: flex; gap: 20px; align-items: center; }
+        .nav-links a { text-decoration: none; color: #a0a0a0; font-weight: 600; font-size: 14px; transition: 0.3s; text-transform: uppercase; letter-spacing: 1px; }
+        .nav-links a:hover { color: #00d2ff; text-shadow: 0 0 8px #00d2ff; }
+        .nav-links a.exit-link { color: #ff3333; }
+        .nav-links a.exit-link:hover { color: #ff6666; text-shadow: 0 0 8px #ff3333; }
+        
+        /* Card Principal */
+        .card { max-width: 1200px; margin: 20px auto; position: relative; padding: 30px; background: rgba(20, 25, 40, 0.6); border: 1px solid rgba(0, 210, 255, 0.15); backdrop-filter: blur(10px); border-radius: 15px; box-shadow: 0 0 40px rgba(0, 0, 0, 0.6); animation: fadeInUp 0.8s ease-out 0.2s backwards; }
+        
+        /* Inputs e Selects Neon */
+        select, input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 5px; border: 1px solid #334; background: rgba(0, 0, 0, 0.4); color: #00d2ff; font-family: 'Exo 2', sans-serif; font-size: 14px; transition: 0.3s; }
+        select:focus, input:focus { border-color: #00d2ff; box-shadow: 0 0 15px rgba(0, 210, 255, 0.2); outline: none; }
+        select option { background-color: #000; color: #00d2ff; }
+        
+        /* Botões Brilhantes */
+        button { width: 100%; padding: 12px; margin: 10px 0; border-radius: 5px; background: linear-gradient(90deg, #00d2ff, #007bff); color: white; border: none; cursor: pointer; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 0 15px rgba(0, 210, 255, 0.4); transition: all 0.3s ease; }
+        button:hover { background: linear-gradient(90deg, #00e1ff, #0088ff); box-shadow: 0 0 25px rgba(0, 210, 255, 0.7); transform: translateY(-2px); }
+        
+        /* Bolas Neon */
+        .resultado { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 20px; perspective: 1000px; }
+        /* Estilo para linhas de múltiplos jogos (Rotação) */
+        .game-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-bottom: 15px; width: 100%; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 10px; }
+        .game-label { font-size: 11px; color: #00d2ff; margin-right: 10px; font-weight: bold; text-transform: uppercase; min-width: 60px; }
+        .bola { background: radial-gradient(circle at 30% 30%, #00d2ff, #0056b3); color: white; width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 18px; animation: spin3d 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) both; box-shadow: 0 0 15px currentColor, inset 0 0 10px rgba(255,255,255,0.3); border: 1px solid rgba(255,255,255,0.4); text-shadow: 0 1px 3px rgba(0,0,0,0.5); transform-style: preserve-3d; }
+        .btn-copy { background: linear-gradient(90deg, #ff00cc, #333399); margin-top: 15px; box-shadow: 0 0 15px rgba(255, 0, 204, 0.4); }
+        .btn-copy:hover { background: linear-gradient(90deg, #ff33dd, #4444aa); box-shadow: 0 0 25px rgba(255, 0, 204, 0.7); }
+        @keyframes spin3d { 0% { transform: scale(0) rotateY(0deg); opacity: 0; } 100% { transform: scale(1) rotateY(360deg); opacity: 1; } }
+
+        /* Histórico e Tabelas */
+        .historico { margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px; text-align: left; }
+        .historico h3 { font-size: 14px; color: #00d2ff; margin: 0 0 10px 0; text-transform: uppercase; }
+        .historico ul { list-style: none; padding: 0; margin: 0; }
+        .historico li { font-size: 13px; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; color: #ccc; }
+        .tag { padding: 2px 8px; border-radius: 4px; color: white; font-size: 10px; margin-right: 8px; font-weight: bold; min-width: 60px; text-align: center; box-shadow: 0 0 5px rgba(0,0,0,0.5); }
+        .bola-small { width: 25px; height: 25px; font-size: 12px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; margin: 0 2px; box-shadow: 0 0 5px currentColor; }
+        
+        /* Inputs Group */
+        .input-group { text-align: left; margin-bottom: 10px; }
+        .input-group label { font-size: 12px; color: #00d2ff; display: block; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px; }
+        
+        /* Checkboxes */
+        .checkbox-group { text-align: left; margin-bottom: 15px; display: flex; flex-direction: column; gap: 8px; }
+        .checkbox-group label { font-size: 13px; color: #e0e6ed; display: flex; align-items: center; cursor: pointer; }
+        .checkbox-group input { margin-right: 8px; }
+        .checkbox-group small { display: block; margin-left: 24px; font-size: 11px; color: #8899a6; margin-top: 2px; line-height: 1.4; }
+        
+        /* Títulos e Descrições */
+        .section-title { font-size: 15px; margin: 15px 0 10px; color: #00d2ff; font-weight: 700; text-transform: uppercase; border-bottom: 1px solid rgba(0, 210, 255, 0.2); padding-bottom: 5px; }
+        .strategy-desc { display: none; margin-top: 8px; font-size: 12px; color: #ccc; background: rgba(0, 210, 255, 0.1); padding: 10px; border-radius: 4px; border-left: 3px solid #00d2ff; line-height: 1.4; }
+        
+        /* Heatmap e Spinner */
+        .heatmap-grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; margin-top: 10px; }
+        .heatmap-item { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; font-size: 10px; color: #666; position: relative; background: rgba(0,0,0,0.2); }
+        .heatmap-item.hot { background-color: rgba(255, 0, 85, 0.2); color: #ff0055; font-weight: bold; border-color: #ff0055; box-shadow: 0 0 5px #ff0055; }
+        .heatmap-item.very-hot { background-color: #ff0055; color: white; border-color: #ff0055; box-shadow: 0 0 10px #ff0055; }
+        .spinner { width: 40px; height: 40px; border: 4px solid rgba(0, 210, 255, 0.1); border-left-color: #00d2ff; border-radius: 50%; animation: spin 1s linear infinite; margin: 20px auto; box-shadow: 0 0 10px rgba(0, 210, 255, 0.2); }
+        
+        /* Tabela Stats */
+        .stats-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
+        .stats-table th, .stats-table td { border: 1px solid rgba(255,255,255,0.1); padding: 8px; text-align: center; color: #e0e6ed; }
+        .stats-table th { background-color: rgba(0, 210, 255, 0.1); color: #00d2ff; text-transform: uppercase; font-size: 11px; }
+        .stats-table tr:nth-child(even) { background-color: rgba(255,255,255,0.02); }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Desktop Layout */
+        .main-layout { display: grid; grid-template-columns: 350px 1fr; gap: 40px; margin-top: 20px; text-align: left; }
+        .right-column { border-left: 1px solid rgba(255,255,255,0.1); padding-left: 40px; display: flex; flex-direction: column; }
+        @media (max-width: 768px) {
+            .main-layout { grid-template-columns: 1fr; gap: 20px; }
+            .right-column { border-left: none; padding-left: 0; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px; }
+        }
+        
+        /* Scrollbar Futurista */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #090a0f; }
+        ::-webkit-scrollbar-thumb { background: #00d2ff; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #007bff; }
+        
+        #matrixCanvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; opacity: 0.2; }
+        
+        /* Advanced Settings */
+        .advanced-toggle { background: rgba(0, 0, 0, 0.3); color: #8899a6; border: 1px solid rgba(255, 255, 255, 0.1); padding: 12px; width: 100%; text-align: left; cursor: pointer; font-size: 12px; border-radius: 5px; margin-top: 20px; display: flex; justify-content: space-between; align-items: center; transition: 0.3s; }
+        .advanced-toggle:hover { background: rgba(0, 0, 0, 0.5); color: #fff; border-color: #00d2ff; }
+        .advanced-content { display: none; background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.1); border-top: none; padding: 15px; border-radius: 0 0 5px 5px; margin-top: -5px; animation: slideDown 0.3s ease; }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Toast Notifications */
+        .toast-container { position: fixed; top: 20px; right: 20px; z-index: 2000; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
+        .toast { background: rgba(15, 20, 35, 0.95); border: 1px solid rgba(0, 210, 255, 0.3); color: #e0e6ed; padding: 15px 20px; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); backdrop-filter: blur(10px); min-width: 280px; max-width: 400px; animation: slideInRight 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), fadeOut 0.5s ease 4.5s forwards; display: flex; align-items: flex-start; gap: 12px; font-size: 13px; pointer-events: auto; }
+        .toast.success { border-left: 4px solid #00ff9d; }
+        .toast.error { border-left: 4px solid #ff3333; }
+        .toast.warning { border-left: 4px solid #ff9900; }
+        .toast.info { border-left: 4px solid #00d2ff; }
+        @keyframes slideInRight { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+        
+        /* Favoritos */
+        .favoritos-section { margin-top: 20px; border-top: 1px solid rgba(255,215,0,0.3); padding-top: 15px; display: none; animation: slideDown 0.3s ease; }
+        .fav-item { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,215,0,0.2); padding: 10px; margin-bottom: 8px; border-radius: 5px; position: relative; }
+        .fav-header { display: flex; justify-content: space-between; font-size: 11px; color: #ffd700; margin-bottom: 5px; text-transform: uppercase; }
+        .btn-delete-fav { background: none; border: none; color: #ff3333; cursor: pointer; font-size: 14px; padding: 0; position: absolute; top: 10px; right: 10px; width: auto; box-shadow: none; }
+        .btn-load-fav { background: none; border: none; color: #00d2ff; cursor: pointer; font-size: 14px; padding: 0; position: absolute; top: 10px; right: 35px; width: auto; box-shadow: none; }
+
+        /* Grid Histórico Oficial (2 Colunas) */
+        #listaHistoricoOficial { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        #listaHistoricoOficial .fav-item { margin-bottom: 0; }
+        #listaHistoricoOficial > :not(.fav-item) { grid-column: 1 / -1; } /* Centraliza loading/erros */
+        @media (max-width: 768px) {
+            #listaHistoricoOficial { grid-template-columns: 1fr; }
+        }
+
+        /* Grid Resultados Oficiais (2 Colunas) */
+        .results-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; max-height: 350px; overflow-y: auto; padding-right: 5px; }
+        .result-item { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 5px; padding: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        @media (max-width: 768px) {
+            .results-grid { grid-template-columns: 1fr; }
+        }
+
+        /* Animações de Entrada */
+        @keyframes slideDownFade { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Botão Flutuante de Ajuda */
+        .floating-help-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #00d2ff, #007bff);
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            border: none;
+            box-shadow: 0 0 20px rgba(0, 210, 255, 0.5);
+            cursor: pointer;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            animation: pulse-blue 2s infinite;
+        }
+        .floating-help-btn:hover { transform: scale(1.1); box-shadow: 0 0 30px rgba(0, 210, 255, 0.8); }
+
+        /* Modal Styles */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(5px); z-index: 2000; display: flex; align-items: center; justify-content: center; animation: fadeIn 0.3s ease; }
+        .modal-content { background: rgba(20, 25, 40, 0.95); border: 1px solid rgba(0, 210, 255, 0.3); padding: 30px; border-radius: 15px; max-width: 500px; width: 90%; position: relative; box-shadow: 0 0 50px rgba(0, 0, 0, 0.8); animation: slideUp 0.3s ease; }
+        .close-modal { position: absolute; top: 10px; right: 15px; color: #aaa; font-size: 28px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .close-modal:hover { color: #fff; }
+
+        @keyframes pulse-blue {
+            0% { box-shadow: 0 0 0 0 rgba(0, 210, 255, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(0, 210, 255, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(0, 210, 255, 0); }
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes pulseBorderEffect {
+            0% { box-shadow: 0 0 30px rgba(0, 210, 255, 0.5), 0 0 0 0 rgba(0, 210, 255, 0.7); }
+            70% { box-shadow: 0 0 30px rgba(0, 210, 255, 0.5), 0 0 0 20px rgba(0, 210, 255, 0); }
+            100% { box-shadow: 0 0 30px rgba(0, 210, 255, 0.5), 0 0 0 0 rgba(0, 210, 255, 0); }
+        }
+    </style>
+    <script>
+        // Verifica permissão de acesso (Redireciona para login se for refresh ou acesso direto)
+        if (!sessionStorage.getItem('sessao_ativa')) {
+            window.location.href = 'login.html';
+        } else {
+            sessionStorage.removeItem('sessao_ativa'); // Consome a sessão para bloquear refresh
+        }
+    </script>
+</head>
+<body>
+<canvas id="matrixCanvas"></canvas>
+<div id="toast-container" class="toast-container"></div>
+
+<nav class="navbar">
+    <div class="brand">🤖 ROBÔ DA SORTE</div>
+    <div class="nav-links">
+        <a href="#" onclick="showHome(event)">Início</a>
+        <a href="#" onclick="showHistory(event)">Histórico</a>
+        <a href="#" onclick="showFavorites(event)">Favoritos</a>
+        <a href="#" onclick="showCreator(event)">Sobre</a>
+        <a href="login.html" class="exit-link">Sair</a>
+    </div>
+</nav>
+
+<div class="card">
+    
+    <div id="home-view" class="main-layout">
+        <!-- Coluna Esquerda: Configurações -->
+        <div class="left-column">
+            <div class="input-group">
+                <h2 style="color: #b026ff; margin: 0 0 15px 0; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 0 15px rgba(176, 38, 255, 0.6); font-size: 24px;">LOTOFÁCIL</h2>
+                <select id="tipoJogo" style="display: none;">
+                    <option value="lotofacil" selected>Lotofácil</option>
+                </select>
+            </div>
+
+            <div style="margin-top: 20px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.1);">
+                <div class="section-title">⚙️ CONFIGURAÇÃO DE ESTRATÉGIA</div>
+                <div class="input-group">
+                    <label>MÉTODO DE GERAÇÃO</label>
+                    <select id="estrategiaExtra">
+                        <option value="">SELECIONE UMA OPÇÃO...</option>
+                        <option value="ferramentas_vantagem">FERRAMENTAS DE VANTAGEM</option>
+                        <option value="ia_neural">✨ INTELIGÊNCIA ARTIFICIAL (REDE NEURAL)</option>
+                        <option value="ia_hibrida">🤖 IA HÍBRIDA (NEURAL + ALEATÓRIO)</option>
+                        <option value="sistema_porcentagem">SISTEMA DE PORCENTAGEM</option>
+                        <option value="grafico_sorteios">ANÁLISE DE MAPA DE CALOR</option>
+                        <option value="vizinhos_consecutivos">NÚMEROS VIZINHOS CONSECUTIVOS</option>
+                        <option value="sistema_rotacao">SISTEMA DE ROTAÇÃO (EFICIÊNCIA 550%)</option>
+                        <option value="esquema_copia">ESQUEMA DE CÓPIA (4 APOSTAS)</option>
+                        <option value="esquema_21_fixa">ESQUEMA DE 21 DEZENAS (1 FIXA)</option>
+                        <option value="esquema_10_coringas">ESQUEMA DE 10 CORINGAS (3 APOSTAS)</option>
+                        <option value="esquema_8_coringas">ESQUEMA DE 8 CORINGAS (9 APOSTAS)</option>
+                        <option value="esquema_7_coringas">ESQUEMA DE 7 CORINGAS (4 APOSTAS)</option>
+                        <option value="esquema_garantia_10">ESQUEMA GARANTIA 10 PONTOS (11 APOSTAS)</option>
+                        <option value="esquema_garantia_10_8">ESQUEMA GARANTIA 10 PONTOS (8 APOSTAS)</option>
+                        <option value="esquema_fechamento_4">ESQUEMA FECHAMENTO 4 DEZENAS (10 APOSTAS)</option>
+                        <option value="esquema_fechamento_3">ESQUEMA FECHAMENTO 3 DEZENAS (6 APOSTAS)</option>
+                        <option value="esquema_exclusao_3">ESQUEMA EXCLUSÃO 3 DEZENAS (6 APOSTAS)</option>
+                    </select>
+                    <div id="estrategiaDescricao" class="strategy-desc"></div>
+                </div>
+
+            </div>
+            <button onclick="gerarJogo()" style="margin-top: 20px; font-size: 16px; padding: 12px;">🎲 GERAR COMBINAÇÃO</button>
+            <div id="indicadorAnalise" style="text-align: center; font-size: 11px; color: #17a2b8; margin-top: 5px; display: none;"></div>
+            
+            <button id="btnSimularLucro" onclick="simularLucroRotacao()" style="display: none; margin-top: 15px; width: 100%; font-size: 14px; padding: 12px; background: linear-gradient(90deg, #ffd700, #ff8c00); color: #000; font-weight: bold;">💸 SIMULAR LUCRO (ÚLTIMOS 10)</button>
+
+            <!-- Configurações Avançadas -->
+            <button class="advanced-toggle" onclick="toggleAdvanced()">
+                <span>🛠️ CONFIGURAÇÕES AVANÇADAS</span>
+                <span id="advArrow">▼</span>
+            </button>
+            <div id="advancedContent" class="advanced-content">
+                <div class="input-group">
+                    <label style="color: #aaa;">VALOR DA APOSTA (R$)</label>
+                    <input type="number" id="valorAposta" value="3.00" step="0.50" style="border-color: #555; color: #ccc; padding: 8px; background: rgba(0,0,0,0.5);">
+                </div>
+                <div class="input-group">
+                    <label style="color: #aaa;">QTD. CONCURSOS PARA ANÁLISE (MANUAL)</label>
+                    <input type="number" id="qtdAnaliseManual" placeholder="Ex: 100 (Deixe vazio para automático)" min="1" style="border-color: #555; color: #ccc; padding: 8px; background: rgba(0,0,0,0.5);">
+                </div>
+                <button onclick="salvarConfiguracoesAvancadas()" style="background: #28a745; color: #fff; font-size: 11px; padding: 8px; box-shadow: none; border: 1px solid #218838; width: 100%; margin-bottom: 10px;">💾 SALVAR CONFIGURAÇÕES</button>
+                
+                <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.1);">
+                    <button onclick="limparCache()" style="background: #343a40; color: #ccc; font-size: 11px; padding: 10px; box-shadow: none; border: 1px solid #444; width: 100%;">🔄 LIMPAR CACHE DE DADOS</button>
+                </div>
+            </div>
+
+            <!-- Área de Doação (QR Code) -->
+            <div style="margin-top: 20px; padding: 15px; background: rgba(0, 210, 255, 0.05); border: 1px dashed rgba(0, 210, 255, 0.3); border-radius: 8px; text-align: center;">
+                <h4 style="margin: 0 0 10px 0; color: #00d2ff; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">☕ APOIE O DESENVOLVIMENTO</h4>
+                <!-- Substitua o 'data=' abaixo pela sua chave PIX ou Link de Pagamento -->
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=mateuzzim131@gmail.com" alt="QR Code Doação" style="width: 120px; height: 120px; border-radius: 5px; border: 2px solid rgba(255,255,255,0.2); margin-bottom: 5px; padding: 5px; background: #fff;">
+                <p style="font-size: 10px; color: #aaa; margin: 5px 0;">Gostou da ferramenta? Faça uma doação!</p>
+                <div style="font-size: 10px; color: #fff; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 4px; margin-top: 5px; border: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: space-between; gap: 5px;">
+                    <span id="chavePixTexto" style="word-break: break-all; text-align: left;">mateuzzim131@gmail.com</span>
+                    <button onclick="copiarPix()" style="background: rgba(0, 210, 255, 0.2); border: 1px solid rgba(0, 210, 255, 0.4); font-size: 10px; padding: 5px 10px; margin: 0; width: auto; white-space: nowrap; cursor: pointer; color: #fff;">📋 COPIAR</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Coluna Direita: Resultados -->
+        <div class="right-column">
+            <div class="resultado" id="resultado" style="min-height: 50px; align-content: center;"></div>
+            <button id="btnCopiar" class="btn-copy" onclick="copiarNumeros()">COPIAR NÚMEROS</button>
+            <button id="btnVerificar" class="btn-copy" style="background: linear-gradient(90deg, #ff9900, #ff5500); box-shadow: 0 0 15px rgba(255, 153, 0, 0.4); margin-top: 10px;" onclick="verificarSeJogoJaSaiu()">🔍 VERIFICAR SE JÁ SAIU</button>
+            <button id="btnSalvarFav" class="btn-copy" style="background: linear-gradient(90deg, #ffd700, #ffaa00); box-shadow: 0 0 15px rgba(255, 215, 0, 0.4); margin-top: 10px;" onclick="salvarFavorito()">⭐ SALVAR FAVORITOS</button>
+
+            <div id="chartContainer" style="display: none; margin-top: 20px; height: 200px;">
+                <canvas id="graficoParesImpares"></canvas>
+            </div>
+
+            <div id="radarContainer" style="display: none; margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;"><h4 style="margin: 0; font-size: 14px; color: #00d2ff;">🧬 DNA DO JOGO (RADAR)</h4><button id="btnToggleRadar" onclick="toggleRadarIdeal()" style="width: auto; padding: 5px 10px; font-size: 10px; background: rgba(0, 210, 255, 0.2); border: 1px solid rgba(0, 210, 255, 0.4); margin: 0;">🆚 COMPARAR COM IDEAL</button></div>
+                <div style="height: 250px;"><canvas id="radarChart"></canvas></div>
+            </div>
+            
+            <div id="heatmapContainer" style="display: none; margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
+                <h4 style="margin: 0 0 10px 0; font-size: 14px; color: #00d2ff;">📊 MAPA DE CALOR (SIMULAÇÃO)</h4>
+                <div id="heatmapGrid" class="heatmap-grid"></div>
+            </div>
+
+            <div style="margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button onclick="consultarSorteioOficial(true)" style="background: linear-gradient(90deg, #ff00cc, #333399); font-size: 14px; box-shadow: 0 0 10px rgba(255, 0, 204, 0.4);">🔍 RESULTADOS OFICIAIS (ÚLTIMOS 10)</button>
+                </div>
+                <div id="resultadoOficial" style="margin-top: 10px; display: flex; justify-content: center; flex-wrap: wrap; gap: 5px;"></div>
+            </div>
+
+            <div style="margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
+                <div class="input-group" style="margin-bottom: 5px;">
+                    <label style="color: #17a2b8; font-size: 11px;">ANALISAR ÚLTIMOS CONCURSOS</label>
+                    <select id="qtdConcursosStats" onchange="verEstatisticas()" style="border-color: #17a2b8; color: #17a2b8;">
+                        <option value="20">20 Concursos</option>
+                        <option value="50" selected>50 Concursos</option>
+                        <option value="100">100 Concursos</option>
+                    </select>
+                </div>
+                <button onclick="verEstatisticas()" style="background: #17a2b8; font-size: 14px;">📊 ATUALIZAR ESTATÍSTICAS</button>
+                <div id="tabelaEstatisticas" style="display: none; margin-top: 10px;"></div>
+            </div>
+
+            <div style="margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
+                <h4 style="margin: 0 0 10px 0; font-size: 13px; color: #00d2ff; text-transform: uppercase;">📈 TENDÊNCIA DE NÚMERO</h4>
+                <div style="display: flex; gap: 10px;">
+                   <input type="number" id="numTendencia" placeholder="Nº (1-25)" min="1" max="25" style="width: 80px; padding: 8px; background: rgba(0,0,0,0.4); border: 1px solid #334; color: #00d2ff; border-radius: 5px;">
+                   <button onclick="gerarGraficoTendencia()" style="background: #17a2b8; font-size: 12px; flex: 1;">VER TENDÊNCIA</button>
+                </div>
+                <div id="containerGraficoTendencia" style="display: none; margin-top: 15px; height: 200px;">
+                   <canvas id="graficoTendencia"></canvas>
+                </div>
+           </div>
+
+            <div class="historico" id="historicoDiv">
+                <h3>HISTÓRICO DE GERAÇÃO</h3>
+                <ul id="listaHistorico"></ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Nova View de Histórico (Separada) -->
+    <div id="history-view" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid rgba(0, 210, 255, 0.3); padding-bottom: 15px;">
+            <h2 style="color: #00d2ff; margin: 0; text-shadow: 0 0 10px rgba(0, 210, 255, 0.4);">📅 HISTÓRICO OFICIAL (1 ANO)</h2>
+            <button onclick="showHome(event)" style="width: auto; padding: 8px 20px; font-size: 12px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);">⬅ VOLTAR AO INÍCIO</button>
+        </div>
+        <div style="background: rgba(0, 210, 255, 0.05); padding: 10px; border-radius: 5px; margin-bottom: 20px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <label style="color: #00d2ff; font-size: 12px; font-weight: bold;">FILTRAR POR MÊS:</label>
+            <input type="month" id="filtroMesHistorico" onchange="aplicarFiltroHistorico()" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(0, 210, 255, 0.3); color: #fff; padding: 5px; border-radius: 4px; font-family: 'Exo 2', sans-serif;">
+            <button onclick="limparFiltroHistorico()" style="width: auto; padding: 6px 12px; font-size: 11px; margin: 0; background: rgba(255,255,255,0.1);">LIMPAR</button>
+        </div>
+        <div id="containerGraficoFrequenciaPagina" style="margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid rgba(0, 210, 255, 0.1);">
+            <h4 style="margin: 0 0 10px 0; font-size: 13px; color: #00d2ff; text-transform: uppercase;">📊 FREQUÊNCIA NA PÁGINA ATUAL</h4>
+            <div style="height: 200px; position: relative;"><canvas id="graficoFrequenciaPagina"></canvas></div>
+        </div>
+        <div id="resumoEstatistico" style="display: none; justify-content: space-around; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 5px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.05);"></div>
+        <div id="listaHistoricoOficial"></div>
+    </div>
+
+    <!-- Nova View de Favoritos (Separada) -->
+    <div id="favorites-view" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid rgba(255, 215, 0, 0.3); padding-bottom: 15px;">
+            <h2 style="color: #ffd700; margin: 0; text-shadow: 0 0 10px rgba(255, 215, 0, 0.4);">⭐ JOGOS SALVOS</h2>
+            <button onclick="showHome(event)" style="width: auto; padding: 8px 20px; font-size: 12px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);">⬅ VOLTAR AO INÍCIO</button>
+        </div>
+        <div style="margin-bottom: 20px;">
+            <input type="text" id="buscaFavoritos" onkeyup="renderizarFavoritos()" placeholder="🔍 Buscar nos favoritos (Data ou Números)..." style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255, 215, 0, 0.3); color: #fff; padding: 10px; width: 100%; box-sizing: border-box; border-radius: 5px;">
+        </div>
+        <div id="listaFavoritos"></div>
+    </div>
+
+    <!-- Nova View de Sobre o Criador -->
+    <div id="creator-view" style="display: none; animation: fadeIn 0.5s ease;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid rgba(0, 210, 255, 0.3); padding-bottom: 15px;">
+            <h2 style="color: #00d2ff; margin: 0; text-shadow: 0 0 10px rgba(0, 210, 255, 0.4);">👨‍💻 SOBRE O CRIADOR</h2>
+            <button onclick="showHome(event)" style="width: auto; padding: 8px 20px; font-size: 12px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);">⬅ VOLTAR AO INÍCIO</button>
+        </div>
+
+        <div style="background: rgba(20, 25, 40, 0.6); padding: 40px; border-radius: 15px; border: 1px solid rgba(0, 210, 255, 0.15); max-width: 600px; margin: 0 auto; text-align: center;">
+            <!-- Foto do Criador -->
+            <img src="https://i.pinimg.com/736x/be/03/29/be03290695845cb9e99d9edb0270d259.jpg" alt="Criador" style="width: 150px; height: 150px; border-radius: 50%; border: 4px solid #00d2ff; padding: 5px; box-shadow: 0 0 30px rgba(0, 210, 255, 0.5); margin-bottom: 20px; object-fit: cover;">
+            <img src="https://i.pinimg.com/736x/be/03/29/be03290695845cb9e99d9edb0270d259.jpg" alt="Criador" style="width: 150px; height: 150px; border-radius: 50%; border: 4px solid #00d2ff; padding: 5px; box-shadow: 0 0 30px rgba(0, 210, 255, 0.5); margin-bottom: 20px; object-fit: cover; animation: pulseBorderEffect 2s infinite;">
+            
+            <h2 style="color: #fff; margin: 10px 0;">Mateus Oliveira</h2>
+            <p style="color: #00d2ff; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; margin-top: 0; font-size: 12px;">Desenvolvedor & Especialista em Loterias</p>
+            
+            <div style="color: #ccc; font-size: 14px; line-height: 1.6; margin: 25px 0; text-align: left; background: rgba(0,0,0,0.2); padding: 20px; border-radius: 10px; border-left: 3px solid #00d2ff;">
+                <p style="margin-top: 0;">Olá! Sou o criador do <strong>Robô da Sorte</strong>. Desenvolvi esta ferramenta utilizando algoritmos avançados de análise combinatória e inteligência artificial para ajudar você a tomar decisões mais estratégicas em seus jogos.</p>
+                <p style="margin-bottom: 0;">Meu objetivo é desmistificar a matemática por trás das loterias e oferecer uma interface futurista, rápida e fácil de usar.</p>
+            </div>
+
+            <h3 style="color: #00d2ff; margin-top: 30px; text-transform: uppercase; font-size: 14px; letter-spacing: 1px;">Minhas Redes Sociais</h3>
+            <div style="display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; margin-top: 15px;">
+                <a href="https://www.instagram.com/mateuzzimvocall" target="_blank" style="text-decoration: none;">
+                    <button style="width: auto; background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%); border: none; padding: 10px 20px; display: flex; align-items: center; gap: 8px; box-shadow: 0 0 15px rgba(220, 39, 67, 0.4);">
+                        📸 Instagram
+                    </button>
+                </a>
+                <a href="https://wa.me/5575999111531" target="_blank" style="text-decoration: none;">
+                    <button style="width: auto; background: #25D366; border: none; padding: 10px 20px; display: flex; align-items: center; gap: 8px; box-shadow: 0 0 15px rgba(37, 211, 102, 0.4);">
+                        💬 WhatsApp
+                    </button>
+                </a>
+                <a href="#" target="_blank" style="text-decoration: none;">
+                    <button style="width: auto; background: #0077b5; border: none; padding: 10px 20px; display: flex; align-items: center; gap: 8px; box-shadow: 0 0 15px rgba(0, 119, 181, 0.4);">
+                        💼 LinkedIn
+                    </button>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<footer style="text-align: center; padding: 20px; color: rgba(255,255,255,0.3); font-size: 11px; margin-top: 10px; animation: fadeInUp 0.8s ease-out 0.4s backwards;">
+    <p style="margin: 5px 0;">&copy; 2025 ROBÔ DA SORTE. TODOS OS DIREITOS RESERVADOS.</p>
+    <p style="margin: 0;">VERSÃO 2.5 • DESENVOLVIDO COM INTELIGÊNCIA ARTIFICIAL</p>
+</footer>
+
+<!-- Botão Flutuante de Ajuda -->
+<button onclick="openHelpModal()" class="floating-help-btn">?</button>
+
+<!-- Modal de Ajuda -->
+<div id="helpModal" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+        <span class="close-modal" onclick="closeHelpModal()">&times;</span>
+        <h2 style="color: #00d2ff; margin-top: 0; border-bottom: 1px solid rgba(0,210,255,0.3); padding-bottom: 10px;">💡 DICAS DE USO</h2>
+        <div style="text-align: left; color: #e0e6ed; font-size: 13px; line-height: 1.6; margin-top: 15px;">
+            <p><strong>1. Escolha uma Estratégia:</strong> Selecione um método no menu "Configuração de Estratégia". Cada um tem uma lógica matemática diferente.</p>
+            <p><strong>2. Gere Combinações:</strong> Clique em "Gerar Combinação". O robô usará dados históricos ou padrões matemáticos.</p>
+            <p><strong>3. Analise os Resultados:</strong> Use o botão "Simular Lucro" para ver como esse jogo teria se saído no passado.</p>
+            <p><strong>4. Salve seus Favoritos:</strong> Gostou de um jogo? Clique em "Salvar Favoritos" para acessá-lo depois.</p>
+            <p><strong>5. Verifique Histórico:</strong> Consulte resultados oficiais e veja se seus números já foram sorteados antes.</p>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Detalhes Genérico -->
+<div id="detailsModal" class="modal-overlay" style="display: none;">
+    <div class="modal-content" style="max-width: 600px;">
+        <span class="close-modal" onclick="closeDetailsModal()">&times;</span>
+        <div id="detailsModalContent"></div>
+    </div>
+</div>
+
+<script>
+    const config = {
+        'mega-sena': { qtd: 6, max: 60, color: '#00ff9d' }, // Verde Neon
+        'lotofacil': { qtd: 15, max: 25, color: '#b026ff' }, // Roxo Neon
+        'quina': { qtd: 5, max: 80, color: '#00b8ff' } // Azul Neon
+    };
+    let chartInstance = null;
+    let chartFrequenciaInstance = null;
+    let chartTendenciaInstance = null;
+    let chartHistoricoPaginaInstance = null;
+    let radarChartInstance = null;
+    let mostrarIdealRadar = false;
+    let lastRadarData = null;
+    let qtdResultadosOficiais = 10;
+    let ultimoScoreIA = [];
+    const cacheHistorico = {}; // Armazena dados para não sobrecarregar a API
+
+    // Ativa os filtros automaticamente ao selecionar a estratégia
+    document.getElementById('estrategiaExtra').addEventListener('change', function() {
+        const descDiv = document.getElementById('estrategiaDescricao');
+        descDiv.style.display = 'none';
+
+        if (this.value === 'ferramentas_vantagem') {
+            descDiv.style.display = 'block';
+            descDiv.innerHTML = '<strong>Ferramentas de Vantagem:</strong><br>' +
+                                '<div style="margin-top:5px;">🚫 <strong>EVITAR SEQUÊNCIAS:</strong> Bloqueia sequências numéricas raras (ex: 01, 02, 03).</div>' +
+                                '<div style="margin-top:5px;">⚖️ <strong>EQUILÍBRIO PAR/ÍMPAR:</strong> Busca balanceamento estatístico entre pares e ímpares.</div>';
+        } else if (this.value === 'ia_neural') {
+            descDiv.style.display = 'block';
+            descDiv.innerHTML = '<strong>Inteligência Artificial (Rede Neural):</strong><br>' +
+                                '<div style="margin-top:5px;">🧠 <strong>SCORE PONDERADO:</strong> O algoritmo calcula uma pontuação para cada número baseada em Recência (últimos 10), Consistência (últimos 100) e Atraso (tempo sem sair).</div>' +
+                                '<div style="margin-top:5px;">🤖 <strong>APRENDIZADO:</strong> Seleciona os 15 números com maior potencial matemático no momento.</div>';
+        } else if (this.value === 'ia_hibrida') {
+            descDiv.style.display = 'block';
+            descDiv.innerHTML = '<strong>IA Híbrida:</strong><br>' +
+                                '<div style="margin-top:5px;">🧠 <strong>BASE SÓLIDA:</strong> Usa a Rede Neural para escolher as 12 ou 13 dezenas mais fortes.</div>' +
+                                '<div style="margin-top:5px;">🎲 <strong>FATOR SORTE:</strong> Adiciona 2 ou 3 números aleatórios para aumentar a variância e buscar zebras.</div>';
+        } else if (this.value === 'sistema_porcentagem') {
+            descDiv.style.display = 'block';
+            descDiv.innerHTML = '<strong>Sistema de Porcentagem:</strong> Analisa os <strong>últimos 10 sorteios reais</strong> para encontrar "números quentes" (que saíram ao menos 2 vezes, sendo uma nos últimos 5), baseando-se na tendência de repetição de 87%.';
+        } else if (this.value === 'grafico_sorteios') {
+            descDiv.style.display = 'block';
+            descDiv.innerHTML = '<strong>Análise de Mapa de Calor:</strong> Gera um mapa de calor baseado nos <strong>últimos 20 sorteios reais</strong> e seleciona números baseados nas "zonas quentes" (números marcados em vermelho).';
+        } else if (this.value === 'vizinhos_consecutivos') {
+            descDiv.style.display = 'block';
+            descDiv.innerHTML = '<strong>Números Vizinhos Consecutivos:</strong> Baseado na probabilidade de sequências.<br>' +
+                                '<div style="margin-top:5px;">✅ <strong>FOCAR EM PARES:</strong> Prioriza pares de vizinhos (ex: 28-29) que são frequentes.</div>' +
+                                '<div style="margin-top:5px;">🚫 <strong>EVITAR SEQUÊNCIAS LONGAS:</strong> Bloqueia sequências de 4, 5 ou 6 números (ex: 21-22-23-24), que são estatisticamente raras.</div>';
+        } else if (this.value === 'sistema_rotacao') {
+            descDiv.style.display = 'block';
+            descDiv.innerHTML = '<strong>Sistemas de Rotação (Matriz Reduzida):</strong><br>' +
+                                '<div style="margin-top:5px;">🚀 <strong>MELHORIA DE 550%:</strong> Cobre 5.5x mais combinações de 4 números do que jogos aleatórios, usando a mesma quantidade de cartões.</div>' +
+                                '<div style="margin-top:5px;">🔢 <strong>ALAVANCAGEM:</strong> Rotaciona um "Pool" de números para garantir matematicamente prêmios se as dezenas sorteadas estiverem no grupo escolhido.</div>';
+        } else if (this.value === 'esquema_copia') {
+            descDiv.style.display = 'block';
+            descDiv.innerHTML = '<strong>Esquema de Cópia (4 Apostas):</strong><br>' +
+                                '<div style="margin-top:5px;">📋 <strong>BASEADO NO ÚLTIMO SORTEIO:</strong> Utiliza 11 dezenas do concurso anterior + 4 dezenas não sorteadas.</div>' +
+                                '<div style="margin-top:5px;">🔄 <strong>DESDOBRAMENTO INTELIGENTE:</strong> Gera 4 jogos estratégicos misturando as dezenas ausentes para maximizar chances de 12 a 14 pontos.</div>';
+        } else if (this.value === 'esquema_21_fixa') {
+            descDiv.style.display = 'block';
+            descDiv.innerHTML = '<strong>Esquema de 21 Dezenas (1 Fixa):</strong><br>' +
+                                '<div style="margin-top:5px;">🎯 <strong>COBERTURA DE 84%:</strong> Joga com 21 das 25 dezenas (20 variáveis + 1 fixa).</div>' +
+                                '<div style="margin-top:5px;">🔒 <strong>GARANTIA MATEMÁTICA:</strong> Gera 7 apostas estratégicas. Acertando 13 variáveis + a fixa, garante 11 pontos (100%).</div>';
+        } else if (this.value === 'esquema_10_coringas') {
+            descDiv.style.display = 'block';
+            descDiv.innerHTML = '<strong>Esquema de 10 Coringas (3 Apostas):</strong><br>' +
+                                '<div style="margin-top:5px;">🃏 <strong>10 NÚMEROS FIXOS:</strong> Escolhe 10 dezenas "Coringas" que se repetem.</div>' +
+                                '<div style="margin-top:5px;">🔄 <strong>ROTAÇÃO TOTAL:</strong> Usa as 15 dezenas restantes para completar os jogos. Acertando 8 a 10 coringas, garante prêmios.</div>';
+        } else if (this.value === 'esquema_8_coringas') {
+            descDiv.style.display = 'block';
+            descDiv.innerHTML = '<strong>Esquema de 8 Coringas (9 Apostas):</strong><br>' +
+                                '<div style="margin-top:5px;">🎱 <strong>8 NÚMEROS FIXOS:</strong> Escolhe 8 dezenas preferidas que se repetem em todos os jogos.</div>' +
+                                '<div style="margin-top:5px;">📈 <strong>ALTA PROBABILIDADE:</strong> Garante 11 ou 12 pontos se acertar as 8 fixas. Cobre todos os 25 números.</div>';
+        } else if (this.value === 'esquema_7_coringas') {
+            descDiv.style.display = 'block';
+            descDiv.innerHTML = '<strong>Esquema de 7 Coringas (4 Apostas):</strong><br>' +
+                                '<div style="margin-top:5px;">🎱 <strong>7 NÚMEROS FIXOS:</strong> Escolhe 7 dezenas preferidas.</div>' +
+                                '<div style="margin-top:5px;">📈 <strong>GARANTIA DE 11 PONTOS:</strong> 100% garantido se acertar as 7 fixas.</div>';
+        } else if (this.value === 'esquema_garantia_10') {
+            descDiv.style.display = 'block';
+            descDiv.innerHTML = '<strong>Esquema Garantia 10 Pontos (11 Apostas):</strong><br>' +
+                                '<div style="margin-top:5px;">🛡️ <strong>100% GARANTIA DE 10 PONTOS:</strong> Cobre todas as 25 dezenas de forma estratégica.</div>' +
+                                '<div style="margin-top:5px;">📅 <strong>PERSISTÊNCIA:</strong> Projetado para garantir prêmios menores frequentes e buscar os maiores a médio prazo.</div>';
+        } else if (this.value === 'esquema_garantia_10_8') {
+            descDiv.style.display = 'block';
+            descDiv.innerHTML = '<strong>Esquema Garantia 10 Pontos (8 Apostas):</strong><br>' +
+                                '<div style="margin-top:5px;">🛡️ <strong>100% GARANTIA DE 10 PONTOS:</strong> Versão econômica com 8 jogos fixos.</div>' +
+                                '<div style="margin-top:5px;">📊 <strong>ALTA PROBABILIDADE:</strong> 72% de chance de 11 pontos.</div>';
+        } else if (this.value === 'esquema_fechamento_4') {
+            descDiv.style.display = 'block';
+            descDiv.innerHTML = '<strong>Esquema Fechamento 4 Dezenas (10 Apostas):</strong><br>' +
+                                '<div style="margin-top:5px;">🔒 <strong>GARANTIA DE 4 ACERTOS:</strong> 5 números fixos estratégicos por jogo.</div>' +
+                                '<div style="margin-top:5px;">🎲 <strong>COMPLEMENTO:</strong> O robô completa com 10 dezenas para maximizar suas chances.</div>';
+        } else if (this.value === 'esquema_fechamento_3') {
+            descDiv.style.display = 'block';
+            descDiv.innerHTML = '<strong>Esquema Fechamento 3 Dezenas (6 Apostas):</strong><br>' +
+                                '<div style="margin-top:5px;">🔒 <strong>GARANTIA DE 3 ACERTOS:</strong> 4 números fixos sequenciais por jogo.</div>' +
+                                '<div style="margin-top:5px;">🎯 <strong>FOCO EM 11 PONTOS:</strong> Facilita buscar 11 acertos ao garantir a base.</div>';
+        } else if (this.value === 'esquema_exclusao_3') {
+            descDiv.style.display = 'block';
+            descDiv.innerHTML = '<strong>Esquema Exclusão 3 Dezenas (6 Apostas):</strong><br>' +
+                                '<div style="margin-top:5px;">🎯 <strong>COBERTURA DE 88%:</strong> Exclui 3 dezenas e joga com as 22 restantes.</div>' +
+                                '<div style="margin-top:5px;">🔒 <strong>GARANTIA DE 11 PONTOS:</strong> 100% garantido se nenhuma das 3 dezenas excluídas for sorteada.</div>';
+        }
+        atualizarIndicadorAnalise();
+    });
+
+    async function gerarJogo() {
+        const estrategiaExtra = document.getElementById('estrategiaExtra').value;
+
+        if (!estrategiaExtra) {
+            showToast("Por favor, selecione um MÉTODO DE GERAÇÃO antes de continuar.", "warning");
+            return;
+        }
+
+        const select = document.getElementById('tipoJogo');
+        const container = document.getElementById('resultado');
+        const btnCopiar = document.getElementById('btnCopiar');
+        const heatmapContainer = document.getElementById('heatmapContainer');
+        const btnGerar = document.querySelector('button[onclick="gerarJogo()"]');
+        const btnSimular = document.getElementById('btnSimularLucro');
+        const radarContainer = document.getElementById('radarContainer');
+        
+        // Limpa simulação anterior ao iniciar nova geração
+        const oldSim = document.querySelector('.simulacao-result');
+        if(oldSim) oldSim.remove();
+
+        container.innerHTML = '<div class="spinner"></div>'; // Mostra spinner
+        heatmapContainer.style.display = 'none';
+        radarContainer.style.display = 'none';
+        btnSimular.style.display = 'none';
+
+        let jogo = config[select.value];
+
+        const filtros = {
+            evitarSequencia: estrategiaExtra === 'ferramentas_vantagem' || estrategiaExtra === 'vizinhos_consecutivos' || estrategiaExtra === 'sistema_rotacao' || estrategiaExtra === 'esquema_copia' || estrategiaExtra === 'esquema_21_fixa' || estrategiaExtra === 'esquema_10_coringas' || estrategiaExtra === 'esquema_8_coringas' || estrategiaExtra === 'esquema_7_coringas' || estrategiaExtra === 'esquema_garantia_10' || estrategiaExtra === 'esquema_garantia_10_8' || estrategiaExtra === 'esquema_fechamento_4' || estrategiaExtra === 'esquema_fechamento_3' || estrategiaExtra === 'esquema_exclusao_3',
+            equilibrioPares: estrategiaExtra === 'ferramentas_vantagem',
+            limitSeq: estrategiaExtra === 'vizinhos_consecutivos' ? 4 : (select.value === 'lotofacil' ? 5 : 3)
+        };
+
+        // Busca dados reais se necessário
+        let dadosReais = null;
+        if (estrategiaExtra === 'sistema_porcentagem' || estrategiaExtra === 'grafico_sorteios' || estrategiaExtra === 'vizinhos_consecutivos' || estrategiaExtra === 'sistema_rotacao' || estrategiaExtra === 'ia_neural' || estrategiaExtra === 'ia_hibrida') {
+            const textoOriginal = btnGerar.innerText;
+            btnGerar.innerText = '⏳ Analisando dados reais...';
+            btnGerar.disabled = true;
+            
+            const baseQtd = (estrategiaExtra === 'grafico_sorteios' || estrategiaExtra === 'sistema_rotacao' || estrategiaExtra === 'ia_neural' || estrategiaExtra === 'ia_hibrida') ? 50 : 10;
+            
+            // Verifica se há definição manual nas configurações avançadas
+            const manualQtdInput = document.getElementById('qtdAnaliseManual');
+            let qtd;
+            if (manualQtdInput && manualQtdInput.value && parseInt(manualQtdInput.value) > 0) {
+                qtd = parseInt(manualQtdInput.value);
+            } else {
+                // Integração com "Carregar Mais": usa a maior quantidade entre o padrão da estratégia e o que está carregado na tela
+                qtd = Math.max(baseQtd, qtdResultadosOficiais);
+            }
+            
+            dadosReais = await buscarHistoricoReal(select.value, qtd);
+            
+            btnGerar.innerText = textoOriginal;
+            btnGerar.disabled = false;
+
+            if (!dadosReais) showToast("Não foi possível buscar os dados oficiais. Usando simulação matemática.", "warning");
+        }
+
+        // Lógica Específica para IA Neural
+        if (estrategiaExtra === 'ia_neural') {
+            gerarIANeural(jogo, container, btnCopiar, dadosReais);
+            return;
+        }
+
+        // Lógica Específica para IA Híbrida
+        if (estrategiaExtra === 'ia_hibrida') {
+            gerarIAHibrida(jogo, container, btnCopiar, dadosReais);
+            return;
+        }
+
+        // Lógica do Sistema de Porcentagem
+        let poolNumerosQuentes = [];
+        if (estrategiaExtra === 'sistema_porcentagem') {
+            poolNumerosQuentes = analisarSistemaPorcentagem(jogo, dadosReais);
+        }
+        
+        let pesosGrafico = {};
+        if (estrategiaExtra === 'grafico_sorteios') {
+            pesosGrafico = analisarGraficoSorteios(jogo, dadosReais);
+            renderizarGrafico(jogo, pesosGrafico);
+        }
+
+        let paresVizinhosFrequentes = [];
+        if (estrategiaExtra === 'vizinhos_consecutivos') {
+            paresVizinhosFrequentes = analisarVizinhos(dadosReais);
+        }
+
+        // Lógica Específica para Rotação (Gera múltiplos jogos)
+        if (estrategiaExtra === 'sistema_rotacao') {
+            gerarRotacao(jogo, container, btnCopiar, select, dadosReais);
+            return;
+        }
+        
+        // Lógica Específica para Esquema de Cópia
+        if (estrategiaExtra === 'esquema_copia') {
+            await gerarEsquemaCopia(jogo, container, btnCopiar);
+            return;
+        }
+        
+        // Lógica Específica para Esquema 21 Dezenas
+        if (estrategiaExtra === 'esquema_21_fixa') {
+            gerarEsquema21(jogo, container, btnCopiar);
+            return;
+        }
+
+        // Lógica Específica para Esquema 10 Coringas
+        if (estrategiaExtra === 'esquema_10_coringas') {
+            gerarEsquemaCoringas(jogo, container, btnCopiar);
+            return;
+        }
+
+        // Lógica Específica para Esquema 8 Coringas
+        if (estrategiaExtra === 'esquema_8_coringas') {
+            gerarEsquema8Coringas(jogo, container, btnCopiar);
+            return;
+        }
+
+        // Lógica Específica para Esquema 7 Coringas
+        if (estrategiaExtra === 'esquema_7_coringas') {
+            gerarEsquema7Coringas(jogo, container, btnCopiar);
+            return;
+        }
+
+        // Lógica Específica para Esquema Garantia 10 Pontos
+        if (estrategiaExtra === 'esquema_garantia_10') {
+            gerarEsquemaGarantia10(jogo, container, btnCopiar);
+            return;
+        }
+
+        // Lógica Específica para Esquema Garantia 10 Pontos (8 Apostas)
+        if (estrategiaExtra === 'esquema_garantia_10_8') {
+            gerarEsquemaGarantia10_8(jogo, container, btnCopiar);
+            return;
+        }
+
+        // Lógica Específica para Esquema Fechamento 4 Dezenas
+        if (estrategiaExtra === 'esquema_fechamento_4') {
+            gerarEsquemaFechamento4(jogo, container, btnCopiar);
+            return;
+        }
+
+        // Lógica Específica para Esquema Fechamento 3 Dezenas
+        if (estrategiaExtra === 'esquema_fechamento_3') {
+            gerarEsquemaFechamento3(jogo, container, btnCopiar);
+            return;
+        }
+
+        // Lógica Específica para Esquema de Exclusão de 3 Dezenas
+        if (estrategiaExtra === 'esquema_exclusao_3') {
+            gerarEsquemaExclusao3(jogo, container, btnCopiar);
+            return;
+        }
+
+        // Lógica Padrão (1 Jogo)
+        let numeros;
+        let tentativas = 0;
+        let maxTentativas = 2000; // Aumentado para facilitar encontrar combinações válidas
+
+        // Loop para tentar gerar um jogo que obedeça aos filtros
+        do {
+            numeros = new Set();
+            
+            // Injeta vizinhos frequentes se a estratégia pedir
+            if (estrategiaExtra === 'vizinhos_consecutivos' && paresVizinhosFrequentes.length > 0) {
+                // Tenta inserir 1 ou 2 pares do top 5
+                const qtdPares = Math.random() > 0.6 ? 2 : 1;
+                for(let k=0; k<qtdPares; k++) {
+                    const par = paresVizinhosFrequentes[Math.floor(Math.random() * Math.min(5, paresVizinhosFrequentes.length))];
+                    if(par) {
+                        numeros.add(par[0]);
+                        numeros.add(par[1]);
+                    }
+                }
+            }
+
+            while(numeros.size < jogo.qtd) {
+                let num;
+                // Se tiver números quentes e sorte der certo (87% de chance segundo a teoria), tenta pegar deles
+                if (poolNumerosQuentes.length > 0 && Math.random() < 0.87) {
+                    const randomIndex = Math.floor(Math.random() * poolNumerosQuentes.length);
+                    num = poolNumerosQuentes[randomIndex];
+                } else if (estrategiaExtra === 'grafico_sorteios' && Object.keys(pesosGrafico).length > 0) {
+                    // Roleta viciada baseada na frequência do gráfico
+                    num = sortearComPeso(pesosGrafico, jogo.max);
+                } else {
+                    num = Math.floor(Math.random() * jogo.max) + 1;
+                }
+
+                numeros.add(num);
+            }
+            tentativas++;
+        } while (!validarFiltros(Array.from(numeros), filtros) && tentativas < maxTentativas);
+
+        if (tentativas >= maxTentativas) {
+            showToast("Não foi possível gerar um jogo com essas regras restritas. Tente relaxar os filtros.", "error");
+            return;
+        }
+
+        // Limpa o spinner antes de mostrar os resultados
+        container.innerHTML = '';
+
+        // Ordenar os números para ficar bonito
+        let numerosOrdenados = Array.from(numeros).sort((a, b) => a - b);
+
+        // Criar as "bolas" na tela
+        numerosOrdenados.forEach((n, i) => {
+            let div = document.createElement('div');
+            div.className = 'bola';
+            div.innerText = String(n).padStart(2, '0');
+            div.style.backgroundColor = jogo.color;
+            div.style.animationDelay = `${i * 0.1}s`; // Efeito cascata
+            container.appendChild(div);
+        });
+
+        adicionarAoHistorico(select.options[select.selectedIndex].text, numerosOrdenados, jogo.color);
+        btnSimular.style.display = 'block';
+        simularLucroRotacao(); // Simulação Automática
+        renderChart(numerosOrdenados);
+
+        confetti({
+            particleCount: 100,
+            spread: 70,
+            origin: { y: 0.6 }
+        });
+    }
+
+    function gerarIANeural(jogo, container, btnCopiar, dadosReais) {
+        container.innerHTML = '';
+        
+        // Se não tiver dados reais, simula um histórico
+        let historico = dadosReais || gerarSimulacao(jogo, 50);
+        
+        // 1. Calcular Métricas para cada número (1 a 25)
+        let scores = [];
+        
+        for (let i = 1; i <= jogo.max; i++) {
+            let score = 0;
+            
+            // Frequência Curto Prazo (Últimos 10)
+            const freqCurta = historico.slice(0, 10).filter(s => s.includes(i)).length;
+            score += freqCurta * 3.0; // Peso alto para tendência recente
+            
+            // Frequência Longo Prazo (Total carregado, ex: 50 ou 100)
+            const freqLonga = historico.filter(s => s.includes(i)).length;
+            score += (freqLonga / historico.length) * 20; // Normaliza e aplica peso
+            
+            // Atraso (Há quantos jogos não sai)
+            let atraso = 0;
+            for (let k = 0; k < historico.length; k++) {
+                if (!historico[k].includes(i)) atraso++;
+                else break;
+            }
+            // Bonifica números que estão "maduros" (atraso médio entre 2 e 5 jogos é bom)
+            if (atraso > 2 && atraso < 6) score += 2.5;
+            if (atraso > 8) score += 1.0; // Muito atrasado, chance de retorno (Lei dos Grandes Números)
+            
+            // Fator Caos (Pequena variação aleatória para não gerar sempre o mesmo jogo no mesmo dia)
+            score += Math.random() * 2.0;
+            
+            scores.push({ numero: i, pontuacao: score, detalhes: { curto: freqCurta, longo: freqLonga, atraso: atraso } });
+        }
+        
+        // 2. Ordenar pelos maiores scores
+        scores.sort((a, b) => b.pontuacao - a.pontuacao);
+        
+        // 3. Selecionar os Top 15
+        const selecionados = scores.slice(0, 15).map(s => s.numero).sort((a, b) => a - b);
+        
+        // Exibir Info da IA
+        const infoHtml = `<div style="width: 100%; text-align: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px dashed rgba(255,255,255,0.1);">
+                            <div style="font-size: 10px; color: #888; margin-bottom: 5px; text-transform: uppercase;">🤖 PREVISÃO DA REDE NEURAL</div>
+                            <div style="font-size: 11px; color: #00d2ff;">Baseado em Recência, Consistência e Atraso</div>
+                          </div>`;
+        container.innerHTML = infoHtml;
+
+        // Renderiza Bolas
+        selecionados.forEach((n, i) => {
+            let div = document.createElement('div');
+            div.className = 'bola';
+            div.innerText = String(n).padStart(2, '0');
+            div.style.backgroundColor = jogo.color;
+            div.style.animationDelay = `${i * 0.05}s`;
+            div.style.boxShadow = `0 0 15px ${jogo.color}, inset 0 0 5px #fff`; // Brilho extra para IA
+            container.appendChild(div);
+        });
+
+        // Salva scores e adiciona botão de detalhes
+        ultimoScoreIA = scores.slice(0, 15); // Salva os top 15 ordenados por pontuação
+        
+        const btnDetalhes = document.createElement('button');
+        btnDetalhes.innerText = '🧠 VER DETALHES DO SCORE';
+        btnDetalhes.style.marginTop = '15px';
+        btnDetalhes.style.background = 'rgba(176, 38, 255, 0.2)';
+        btnDetalhes.style.border = '1px solid #b026ff';
+        btnDetalhes.style.fontSize = '12px';
+        btnDetalhes.onclick = verDetalhesIA;
+        container.appendChild(btnDetalhes);
+
+        adicionarAoHistorico("IA Neural", selecionados, "#b026ff");
+        document.getElementById('btnSimularLucro').style.display = 'block';
+        simularLucroRotacao();
+        renderChart(selecionados);
+        renderRadarChart(selecionados, scores, historico.length);
+        confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#b026ff', '#00d2ff'] });
+    }
+
+    function gerarIAHibrida(jogo, container, btnCopiar, dadosReais) {
+        container.innerHTML = '';
+        
+        // Se não tiver dados reais, simula um histórico
+        let historico = dadosReais || gerarSimulacao(jogo, 50);
+        
+        // 1. Calcular Scores (Mesma lógica da IA Neural)
+        let scores = [];
+        for (let i = 1; i <= jogo.max; i++) {
+            let score = 0;
+            const freqCurta = historico.slice(0, 10).filter(s => s.includes(i)).length;
+            score += freqCurta * 3.0;
+            const freqLonga = historico.filter(s => s.includes(i)).length;
+            score += (freqLonga / historico.length) * 20;
+            let atraso = 0;
+            for (let k = 0; k < historico.length; k++) {
+                if (!historico[k].includes(i)) atraso++;
+                else break;
+            }
+            if (atraso > 2 && atraso < 6) score += 2.5;
+            if (atraso > 8) score += 1.0;
+            score += Math.random() * 2.0;
+            scores.push({ numero: i, pontuacao: score, detalhes: { curto: freqCurta, longo: freqLonga, atraso: atraso } });
+        }
+        
+        scores.sort((a, b) => b.pontuacao - a.pontuacao);
+        
+        // 2. Definir quantos aleatórios (2 ou 3)
+        const qtdAleatorios = Math.random() > 0.5 ? 2 : 3;
+        const qtdNeural = jogo.qtd - qtdAleatorios;
+        
+        // 3. Selecionar Top Neural
+        const topNeural = scores.slice(0, qtdNeural).map(s => s.numero);
+        
+        // 4. Selecionar Aleatórios (excluindo os já escolhidos)
+        const poolRestante = scores.slice(qtdNeural).map(s => s.numero);
+        const aleatoriosEscolhidos = [];
+        const poolEmbaralhado = poolRestante.sort(() => Math.random() - 0.5);
+        for(let i=0; i<qtdAleatorios; i++) {
+            aleatoriosEscolhidos.push(poolEmbaralhado[i]);
+        }
+        
+        const resultadoFinal = [...topNeural, ...aleatoriosEscolhidos].sort((a, b) => a - b);
+        
+        // Exibir Info
+        const infoHtml = `<div style="width: 100%; text-align: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px dashed rgba(255,255,255,0.1);">
+                            <div style="font-size: 10px; color: #888; margin-bottom: 5px; text-transform: uppercase;">🤖 IA HÍBRIDA (${qtdNeural} Neural + ${qtdAleatorios} Aleatórios)</div>
+                            <div style="font-size: 11px; color: #00d2ff;">Mistura de precisão estatística com fator surpresa</div>
+                          </div>`;
+        container.innerHTML = infoHtml;
+
+        // Renderiza Bolas
+        resultadoFinal.forEach((n, i) => {
+            let div = document.createElement('div');
+            div.className = 'bola';
+            div.innerText = String(n).padStart(2, '0');
+            div.style.backgroundColor = jogo.color;
+            div.style.animationDelay = `${i * 0.05}s`;
+            if (aleatoriosEscolhidos.includes(n)) {
+                div.style.border = '2px solid #ffd700';
+                div.style.boxShadow = `0 0 10px #ffd700`;
+            } else {
+                div.style.boxShadow = `0 0 15px ${jogo.color}, inset 0 0 5px #fff`;
+            }
+            container.appendChild(div);
+        });
+
+        ultimoScoreIA = scores.slice(0, qtdNeural); // Salva apenas a parte neural para detalhes
+        
+        const btnDetalhes = document.createElement('button');
+        btnDetalhes.innerText = '🧠 VER DETALHES (BASE NEURAL)';
+        btnDetalhes.style.marginTop = '15px';
+        btnDetalhes.style.background = 'rgba(176, 38, 255, 0.2)';
+        btnDetalhes.style.border = '1px solid #b026ff';
+        btnDetalhes.style.fontSize = '12px';
+        btnDetalhes.onclick = verDetalhesIA;
+        container.appendChild(btnDetalhes);
+
+        adicionarAoHistorico("IA Híbrida", resultadoFinal, "#b026ff");
+        document.getElementById('btnSimularLucro').style.display = 'block';
+        simularLucroRotacao();
+        renderChart(resultadoFinal);
+        renderRadarChart(resultadoFinal, scores, historico.length);
+        confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#b026ff', '#ffd700'] });
+    }
+
+    function gerarRotacao(jogo, container, btnCopiar, select, dadosReais) {
+        container.innerHTML = '';
+        
+        // 1. Escolher o "Pool" de números para rotacionar (Ex: 18 números para Lotofácil)
+        // Se fosse Mega Sena (System 37), seriam 12. Para Lotofácil, usamos 18 para dar uma boa cobertura.
+        const qtdPool = select.value === 'lotofacil' ? 18 : 12;
+        const qtdJogosGerados = 6; // Conforme System 37 gera 6 jogos
+        
+        let pool = new Set();
+        
+        if (dadosReais && dadosReais.length > 0) {
+            // Analisa frequência dos últimos sorteios para montar um pool forte
+            const frequencia = {};
+            dadosReais.forEach(sorteio => sorteio.forEach(n => frequencia[n] = (frequencia[n] || 0) + 1));
+            const ordenados = Object.entries(frequencia).sort((a, b) => b[1] - a[1]).map(x => parseInt(x[0]));
+            
+            // Pega os top X
+            for (let i = 0; i < ordenados.length && pool.size < qtdPool; i++) {
+                pool.add(ordenados[i]);
+            }
+        }
+
+        while(pool.size < qtdPool) {
+            pool.add(Math.floor(Math.random() * jogo.max) + 1);
+        }
+        const poolArray = Array.from(pool).sort((a, b) => a - b);
+
+        // Exibe o Pool de números (Matriz Mestra)
+        const poolHtml = `<div style="width: 100%; text-align: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px dashed rgba(255,255,255,0.1);">
+                            <div style="font-size: 10px; color: #888; margin-bottom: 5px; text-transform: uppercase;">POOL DE ${qtdPool} DEZENAS (MATRIZ MESTRA)</div>
+                            <div style="display: flex; justify-content: center; gap: 4px; flex-wrap: wrap;">
+                                ${poolArray.map(n => `<div class="bola-small" style="background: transparent; border: 1px solid #555; color: #aaa;">${n}</div>`).join('')}
+                            </div>
+                          </div>`;
+        container.innerHTML = poolHtml;
+
+        // 2. Gerar os jogos combinados a partir desse pool
+        for (let i = 0; i < qtdJogosGerados; i++) {
+            let jogoSet = new Set();
+            // Tenta preencher o jogo usando apenas números do pool
+            while(jogoSet.size < jogo.qtd) {
+                const num = poolArray[Math.floor(Math.random() * poolArray.length)];
+                jogoSet.add(num);
+            }
+            
+            const numerosOrdenados = Array.from(jogoSet).sort((a, b) => a - b);
+            
+            // Renderiza Linha
+            const row = document.createElement('div');
+            row.className = 'game-row';
+            row.innerHTML = `<div class="game-label">JOGO ${i+1}</div>`;
+            
+            numerosOrdenados.forEach((n, j) => {
+                row.innerHTML += `<div class="bola" style="width:35px; height:35px; font-size:14px; background-color:${jogo.color}; animation-delay:${j*0.05}s">${String(n).padStart(2, '0')}</div>`;
+            });
+            
+            container.appendChild(row);
+        }
+
+        adicionarAoHistorico(`Rotação (${qtdPool} Dezenas)`, [], jogo.color);
+        document.getElementById('btnSimularLucro').style.display = 'block';
+        simularLucroRotacao(); // Simulação Automática
+        
+        // Efeito visual
+        confetti({ particleCount: 150, spread: 100, origin: { y: 0.6 } });
+    }
+
+    async function gerarEsquemaCopia(jogo, container, btnCopiar) {
+        const btnGerar = document.querySelector('button[onclick="gerarJogo()"]');
+        const originalText = btnGerar.innerText;
+        btnGerar.innerText = '⏳ Buscando último sorteio...';
+        btnGerar.disabled = true;
+
+        try {
+            const resp = await fetch('https://loteriascaixa-api.herokuapp.com/api/lotofacil/latest');
+            const data = await resp.json();
+            const dezenasSorteadas = data.dezenas.map(Number);
+            
+            // Identificar as 10 ausentes
+            const todasDezenas = Array.from({length: 25}, (_, i) => i + 1);
+            const dezenasAusentes = todasDezenas.filter(n => !dezenasSorteadas.includes(n));
+            
+            // Misturar as ausentes (Passo 1: "misture todas as 10 dezenas")
+            const ausentesEmbaralhadas = dezenasAusentes.sort(() => Math.random() - 0.5);
+            
+            // Escolher 11 das 15 sorteadas (Passo 3: "acrescente as 11 dezenas... em cada jogo")
+            const sorteadasEmbaralhadas = dezenasSorteadas.sort(() => Math.random() - 0.5);
+            const base11 = sorteadasEmbaralhadas.slice(0, 11);
+            
+            // Esquema de 4 jogos (Indices 1-based das ausentes misturadas)
+            const esquemaIndices = [
+                [4, 7, 9, 10], // Jogo 1
+                [1, 2, 5, 6],  // Jogo 2
+                [3, 4, 8, 10], // Jogo 3
+                [3, 5, 7, 8]   // Jogo 4
+            ];
+            
+            container.innerHTML = '';
+            
+            // Exibir info do concurso base
+            const infoHtml = `<div style="width: 100%; text-align: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px dashed rgba(255,255,255,0.1);">
+                                <div style="font-size: 10px; color: #888; margin-bottom: 5px; text-transform: uppercase;">BASEADO NO CONCURSO ${data.concurso}</div>
+                                <div style="font-size: 11px; color: #00d2ff;">11 Fixas do Anterior + 4 Ausentes Rotacionadas</div>
+                              </div>`;
+            container.innerHTML = infoHtml;
+
+            esquemaIndices.forEach((indices, idx) => {
+                // Pega as 4 ausentes baseadas nos índices (ajustando para 0-based)
+                const quatroAusentes = indices.map(i => ausentesEmbaralhadas[i-1]);
+                
+                // Junta com as 11 fixas
+                const jogoGerado = [...base11, ...quatroAusentes].sort((a, b) => a - b);
+                
+                // Renderiza
+                const row = document.createElement('div');
+                row.className = 'game-row';
+                row.innerHTML = `<div class="game-label">JOGO ${idx+1}</div>`;
+                
+                jogoGerado.forEach((n, j) => {
+                    row.innerHTML += `<div class="bola" style="width:35px; height:35px; font-size:14px; background-color:${jogo.color}; animation-delay:${j*0.05}s">${String(n).padStart(2, '0')}</div>`;
+                });
+                
+                container.appendChild(row);
+            });
+
+            adicionarAoHistorico(`Cópia (${data.concurso})`, [], jogo.color);
+            document.getElementById('btnSimularLucro').style.display = 'block';
+            simularLucroRotacao(); // Simulação Automática
+            confetti({ particleCount: 150, spread: 100, origin: { y: 0.6 } });
+
+        } catch (error) {
+            showToast('Erro ao buscar último sorteio. Verifique sua conexão.', "error");
+            console.error(error);
+        } finally {
+            btnGerar.innerText = originalText;
+            btnGerar.disabled = false;
+        }
+    }
+
+    function gerarEsquema21(jogo, container, btnCopiar) {
+        container.innerHTML = '';
+        
+        // 1. Selecionar 21 números (1 Fixa + 20 Variáveis)
+        // Gera aleatoriamente 21 números únicos do total (1-25)
+        const todosNumeros = Array.from({length: jogo.max}, (_, i) => i + 1);
+        const escolhidos = todosNumeros.sort(() => Math.random() - 0.5).slice(0, 21);
+        
+        // Identificar as 4 dezenas de fora
+        const dezenasDeFora = todosNumeros.filter(n => !escolhidos.includes(n)).sort((a,b) => a-b);
+
+        // Separar: 1 Fixa e 20 Variáveis
+        const fixa = escolhidos[0];
+        const variaveis = escolhidos.slice(1).sort((a,b) => a-b); // D01 a D20 ordenados
+        
+        // Exibir Info
+        const infoHtml = `<div style="width: 100%; text-align: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px dashed rgba(255,255,255,0.1);">
+                            <div style="font-size: 10px; color: #888; margin-bottom: 5px; text-transform: uppercase;">ESQUEMA 21 DEZENAS (7 JOGOS)</div>
+                            <div style="font-size: 11px; color: #00d2ff; margin-bottom: 8px;">Fixa: <span style="font-weight:bold; color:#ffd700; border: 1px solid #ffd700; padding: 0 4px; border-radius: 3px;">${String(fixa).padStart(2,'0')}</span> | Variáveis: ${variaveis.length}</div>
+                            <div style="font-size: 10px; color: #ff3333; display: flex; align-items: center; justify-content: center; gap: 5px;">
+                                <span>🚫 DE FORA:</span>
+                                ${dezenasDeFora.map(n => `<span style="background: rgba(255, 51, 51, 0.2); border: 1px solid #ff3333; padding: 1px 5px; border-radius: 3px;">${String(n).padStart(2,'0')}</span>`).join('')}
+                            </div>
+                          </div>`;
+        container.innerHTML = infoHtml;
+
+        // Definição dos Jogos (Índices 0-based para o array 'variaveis')
+        const matrizJogos = [
+            [0, 4, 5, 6, 7, 8, 9, 10, 12, 13, 14, 15, 18, 19], // Jogo 1
+            [4, 5, 6, 7, 8, 9, 10, 12, 13, 14, 15, 16, 17, 19], // Jogo 2
+            [0, 1, 2, 3, 4, 6, 7, 8, 11, 14, 15, 16, 18, 19], // Jogo 3
+            [0, 1, 2, 3, 4, 6, 9, 10, 11, 12, 13, 16, 17, 18], // Jogo 4
+            [0, 1, 2, 3, 5, 6, 8, 9, 11, 14, 15, 17, 18, 19], // Jogo 5
+            [0, 1, 2, 3, 4, 5, 7, 10, 11, 12, 13, 16, 17, 18], // Jogo 6
+            [1, 2, 3, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 19]  // Jogo 7
+        ];
+
+        matrizJogos.forEach((indices, idx) => {
+            // Mapeia índices para números reais
+            let numerosJogo = indices.map(i => variaveis[i]);
+            // Adiciona a fixa
+            numerosJogo.push(fixa);
+            // Ordena
+            numerosJogo.sort((a, b) => a - b);
+            
+            // Renderiza
+            const row = document.createElement('div');
+            row.className = 'game-row';
+            row.innerHTML = `<div class="game-label">JOGO ${idx+1}</div>`;
+            
+            numerosJogo.forEach((n, j) => {
+                const isFixa = n === fixa;
+                const styleExtra = isFixa ? 'border: 1px solid #ffd700; box-shadow: 0 0 5px #ffd700;' : '';
+                row.innerHTML += `<div class="bola" style="width:35px; height:35px; font-size:14px; background-color:${jogo.color}; animation-delay:${j*0.05}s; ${styleExtra}">${String(n).padStart(2, '0')}</div>`;
+            });
+            
+            container.appendChild(row);
+        });
+
+        adicionarAoHistorico(`Esquema 21 (Fixa ${fixa})`, [], jogo.color);
+        document.getElementById('btnSimularLucro').style.display = 'block';
+        simularLucroRotacao(); 
+        confetti({ particleCount: 150, spread: 100, origin: { y: 0.6 } });
+    }
+
+    function gerarEsquemaCoringas(jogo, container, btnCopiar) {
+        container.innerHTML = '';
+
+        // 1. Selecionar 10 Coringas (Fixos) e 15 Comuns (Restantes)
+        const todosNumeros = Array.from({length: jogo.max}, (_, i) => i + 1);
+        const embaralhados = todosNumeros.sort(() => Math.random() - 0.5);
+        
+        const coringas = embaralhados.slice(0, 10).sort((a,b) => a-b);
+        const comuns = embaralhados.slice(10); // As 15 restantes (D01 a D15)
+
+        // Exibir Info
+        const infoHtml = `<div style="width: 100%; text-align: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px dashed rgba(255,255,255,0.1);">
+                            <div style="font-size: 10px; color: #888; margin-bottom: 5px; text-transform: uppercase;">ESQUEMA 10 CORINGAS (3 JOGOS)</div>
+                            <div style="font-size: 11px; color: #00d2ff;">Coringas: <span style="font-weight:bold; color:#ffd700;">${coringas.join(', ')}</span></div>
+                          </div>`;
+        container.innerHTML = infoHtml;
+
+        // Definição dos Jogos baseada nos índices das dezenas comuns (0-based para D01-D15)
+        // Jogo 1 = D01, D04, D06, D07, D10
+        // Jogo 2 = D02, D11, D12, D13, D14
+        // Jogo 3 = D03, D05, D08, D09, D15
+        const matrizIndices = [
+            [0, 3, 5, 6, 9],       // Jogo 1
+            [1, 10, 11, 12, 13],   // Jogo 2
+            [2, 4, 7, 8, 14]       // Jogo 3
+        ];
+
+        matrizIndices.forEach((indices, idx) => {
+            // Pega as 5 comuns do jogo
+            const cincoComuns = indices.map(i => comuns[i]);
+            // Junta com as 10 coringas
+            const numerosJogo = [...coringas, ...cincoComuns].sort((a, b) => a - b);
+
+            // Renderiza
+            const row = document.createElement('div');
+            row.className = 'game-row';
+            row.innerHTML = `<div class="game-label">JOGO ${idx+1}</div>`;
+            
+            numerosJogo.forEach((n, j) => {
+                const isCoringa = coringas.includes(n);
+                const styleExtra = isCoringa ? 'border: 1px solid #ffd700; box-shadow: 0 0 3px #ffd700;' : '';
+                row.innerHTML += `<div class="bola" style="width:35px; height:35px; font-size:14px; background-color:${jogo.color}; animation-delay:${j*0.05}s; ${styleExtra}">${String(n).padStart(2, '0')}</div>`;
+            });
+            container.appendChild(row);
+        });
+
+        adicionarAoHistorico(`10 Coringas`, [], jogo.color);
+        document.getElementById('btnSimularLucro').style.display = 'block';
+        simularLucroRotacao();
+        confetti({ particleCount: 150, spread: 100, origin: { y: 0.6 } });
+    }
+
+    function gerarEsquema7Coringas(jogo, container, btnCopiar, coringasFixos = null) {
+        container.innerHTML = '';
+
+        // 1. Selecionar 7 Coringas (Fixos) e 18 Variáveis (Restantes)
+        const todosNumeros = Array.from({length: jogo.max}, (_, i) => i + 1);
+        
+        let coringas, variaveis;
+
+        if (coringasFixos) {
+            coringas = coringasFixos.sort((a,b) => a-b);
+            variaveis = todosNumeros.filter(n => !coringas.includes(n)).sort((a,b) => a-b);
+        } else {
+            const embaralhados = todosNumeros.sort(() => Math.random() - 0.5);
+            coringas = embaralhados.slice(0, 7).sort((a,b) => a-b);
+            variaveis = embaralhados.slice(7).sort((a,b) => a-b);
+        }
+
+        // Exibir Info
+        const infoHtml = `<div style="width: 100%; text-align: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px dashed rgba(255,255,255,0.1);">
+                            <div style="font-size: 10px; color: #888; margin-bottom: 5px; text-transform: uppercase;">ESQUEMA 7 CORINGAS (4 JOGOS)</div>
+                            <div style="font-size: 11px; color: #00d2ff;">Coringas: <span style="font-weight:bold; color:#ffd700;">${coringas.join(', ')}</span></div>
+                          </div>`;
+        container.innerHTML = infoHtml;
+
+        // Matriz de índices para as 18 variáveis (0 a 17)
+        const matrizIndices = [
+            [0, 1, 4, 10, 11, 13, 16, 17], // Jogo 1
+            [2, 3, 5, 6, 8, 9, 12, 14],    // Jogo 2
+            [0, 1, 2, 7, 13, 14, 15, 16],  // Jogo 3
+            [4, 7, 10, 11, 12, 14, 15, 17] // Jogo 4
+        ];
+
+        matrizIndices.forEach((indices, idx) => {
+            const oitoVariaveis = indices.map(i => variaveis[i]);
+            const numerosJogo = [...coringas, ...oitoVariaveis].sort((a, b) => a - b);
+
+            const row = document.createElement('div');
+            row.className = 'game-row';
+            row.innerHTML = `<div class="game-label">JOGO ${idx+1}</div>`;
+            
+            numerosJogo.forEach((n, j) => {
+                const isCoringa = coringas.includes(n);
+                const styleExtra = isCoringa ? 'border: 1px solid #ffd700; box-shadow: 0 0 3px #ffd700;' : '';
+                row.innerHTML += `<div class="bola" style="width:35px; height:35px; font-size:14px; background-color:${jogo.color}; animation-delay:${j*0.05}s; ${styleExtra}">${String(n).padStart(2, '0')}</div>`;
+            });
+            
+            container.appendChild(row);
+        });
+
+        adicionarAoHistorico(`7 Coringas`, [], jogo.color);
+        document.getElementById('btnSimularLucro').style.display = 'block';
+        
+        adicionarBotoesExtras7Coringas(container);
+        simularLucroRotacao();
+        confetti({ particleCount: 150, spread: 100, origin: { y: 0.6 } });
+    }
+
+    function gerarEsquema8Coringas(jogo, container, btnCopiar, coringasFixos = null) {
+        container.innerHTML = '';
+
+        // 1. Selecionar 8 Coringas (Fixos) e 17 Variáveis (Restantes)
+        const todosNumeros = Array.from({length: jogo.max}, (_, i) => i + 1);
+        
+        let coringas, variaveis;
+
+        if (coringasFixos) {
+            coringas = coringasFixos.sort((a,b) => a-b);
+            variaveis = todosNumeros.filter(n => !coringas.includes(n)).sort((a,b) => a-b);
+        } else {
+            const embaralhados = todosNumeros.sort(() => Math.random() - 0.5);
+            coringas = embaralhados.slice(0, 8).sort((a,b) => a-b);
+            variaveis = embaralhados.slice(8).sort((a,b) => a-b);
+        }
+
+        // Exibir Info
+        const infoHtml = `<div style="width: 100%; text-align: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px dashed rgba(255,255,255,0.1);">
+                            <div style="font-size: 10px; color: #888; margin-bottom: 5px; text-transform: uppercase;">ESQUEMA 8 CORINGAS (9 JOGOS)</div>
+                            <div style="font-size: 11px; color: #00d2ff;">Coringas: <span style="font-weight:bold; color:#ffd700;">${coringas.join(', ')}</span></div>
+                          </div>`;
+        container.innerHTML = infoHtml;
+
+        // Matriz de índices para as 17 variáveis (0 a 16)
+        // Baseado no esquema do livro (adaptado para índices 0-based)
+        const matrizIndices = [
+            [0, 3, 5, 8, 10, 14, 16],   // Jogo 1
+            [0, 1, 2, 8, 12, 14, 15],   // Jogo 2
+            [0, 1, 2, 4, 7, 9, 14],     // Jogo 3
+            [0, 1, 2, 6, 10, 13, 14],   // Jogo 4
+            [3, 5, 6, 11, 12, 13, 16],  // Jogo 5
+            [3, 4, 6, 7, 8, 9, 13],     // Jogo 6
+            [1, 2, 5, 8, 10, 11, 16],   // Jogo 7
+            [3, 5, 6, 11, 13, 15, 16],  // Jogo 8
+            [4, 7, 9, 10, 11, 12, 15]   // Jogo 9
+        ];
+
+        matrizIndices.forEach((indices, idx) => {
+            // Pega as 7 variáveis do jogo
+            const seteVariaveis = indices.map(i => variaveis[i]);
+            
+            // Junta com as 8 coringas
+            const numerosJogo = [...coringas, ...seteVariaveis].sort((a, b) => a - b);
+
+            // Renderiza
+            const row = document.createElement('div');
+            row.className = 'game-row';
+            row.innerHTML = `<div class="game-label">JOGO ${idx+1}</div>`;
+            
+            numerosJogo.forEach((n, j) => {
+                const isCoringa = coringas.includes(n);
+                const styleExtra = isCoringa ? 'border: 1px solid #ffd700; box-shadow: 0 0 3px #ffd700;' : '';
+                row.innerHTML += `<div class="bola" style="width:35px; height:35px; font-size:14px; background-color:${jogo.color}; animation-delay:${j*0.05}s; ${styleExtra}">${String(n).padStart(2, '0')}</div>`;
+            });
+            
+            container.appendChild(row);
+        });
+
+        adicionarAoHistorico(`8 Coringas`, [], jogo.color);
+        document.getElementById('btnSimularLucro').style.display = 'block';
+        
+        // Botão para Sugerir Coringas Quentes
+        const btnSugerir = document.createElement('button');
+        btnSugerir.id = 'btnSugerirCoringas';
+        btnSugerir.innerText = '🔥 USAR 8 CORINGAS MAIS QUENTES (ÚLTIMOS 50)';
+        btnSugerir.style.marginTop = '10px';
+        btnSugerir.style.background = 'linear-gradient(90deg, #ff512f, #dd2476)';
+        btnSugerir.style.fontSize = '12px';
+        btnSugerir.onclick = sugerirCoringasQuentes;
+        container.appendChild(btnSugerir);
+        
+        // Botão de Simulação de Garantia Específica
+        const btnGarantia = document.createElement('button');
+        btnGarantia.innerText = '🧪 SIMULAR GARANTIA (ACERTANDO OS 8)';
+        btnGarantia.style.marginTop = '15px';
+        btnGarantia.style.background = 'linear-gradient(90deg, #00d2ff, #007bff)';
+        btnGarantia.style.color = '#fff';
+        btnGarantia.style.fontWeight = 'bold';
+        btnGarantia.style.boxShadow = '0 0 10px rgba(0, 210, 255, 0.4)';
+        btnGarantia.onclick = simularGarantia8Coringas;
+        container.appendChild(btnGarantia);
+
+        simularLucroRotacao();
+        confetti({ particleCount: 150, spread: 100, origin: { y: 0.6 } });
+    }
+
+    function gerarEsquemaGarantia10(jogo, container, btnCopiar) {
+        container.innerHTML = '';
+
+        // Jogos fixos definidos na estratégia
+        const jogosFixos = [
+            [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+            [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 21, 22, 23, 24, 25],
+            [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20],
+            [1, 2, 3, 6, 7, 8, 11, 12, 13, 16, 17, 18, 21, 22, 23],
+            [11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25],
+            [1, 2, 3, 6, 7, 8, 11, 12, 13, 15, 16, 19, 20, 24, 25],
+            [1, 2, 3, 4, 5, 8, 9, 11, 12, 15, 17, 18, 19, 20, 21],
+            [4, 5, 9, 10, 14, 15, 17, 18, 19, 20, 21, 22, 23, 24, 25],
+            [4, 5, 8, 9, 10, 11, 12, 13, 14, 16, 17, 18, 21, 22, 23],
+            [1, 2, 3, 4, 5, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25],
+            [1, 2, 3, 4, 5, 6, 7, 9, 10, 14, 15, 19, 20, 24, 25]
+        ];
+
+        // Exibir Info
+        const infoHtml = `<div style="width: 100%; text-align: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px dashed rgba(255,255,255,0.1);">
+                            <div style="font-size: 10px; color: #888; margin-bottom: 5px; text-transform: uppercase;">ESQUEMA GARANTIA 10 PONTOS (11 JOGOS)</div>
+                            <div style="font-size: 11px; color: #00d2ff;">Jogos Fixos Estratégicos</div>
+                          </div>`;
+        container.innerHTML = infoHtml;
+
+        jogosFixos.forEach((numerosJogo, idx) => {
+            // Renderiza
+            const row = document.createElement('div');
+            row.className = 'game-row';
+            row.innerHTML = `<div class="game-label">JOGO ${idx+1}</div>`;
+            
+            numerosJogo.forEach((n, j) => {
+                row.innerHTML += `<div class="bola" style="width:35px; height:35px; font-size:14px; background-color:${jogo.color}; animation-delay:${j*0.05}s">${String(n).padStart(2, '0')}</div>`;
+            });
+            
+            container.appendChild(row);
+        });
+
+        adicionarAoHistorico(`Garantia 10 Pts`, [], jogo.color);
+        document.getElementById('btnSimularLucro').style.display = 'block';
+        simularLucroRotacao();
+        confetti({ particleCount: 150, spread: 100, origin: { y: 0.6 } });
+    }
+
+    function gerarEsquemaGarantia10_8(jogo, container, btnCopiar) {
+        container.innerHTML = '';
+
+        // Jogos fixos definidos na estratégia (8 apostas)
+        const jogosFixos = [
+            [1, 4, 6, 8, 9, 10, 11, 12, 15, 16, 17, 22, 23, 24, 25],
+            [1, 2, 3, 6, 7, 8, 10, 11, 13, 14, 15, 20, 22, 24, 25],
+            [1, 2, 4, 5, 10, 12, 16, 17, 18, 19, 20, 21, 23, 24, 25],
+            [1, 2, 5, 6, 8, 9, 11, 15, 16, 17, 18, 19, 20, 21, 22],
+            [2, 3, 6, 7, 8, 10, 11, 13, 15, 16, 17, 20, 22, 24, 25],
+            [3, 4, 5, 9, 12, 13, 14, 15, 18, 19, 21, 22, 23, 24, 25],
+            [1, 3, 4, 5, 7, 9, 12, 13, 14, 16, 17, 18, 19, 21, 23],
+            [2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 18, 19, 20, 21]
+        ];
+
+        // Exibir Info
+        const infoHtml = `<div style="width: 100%; text-align: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px dashed rgba(255,255,255,0.1);">
+                            <div style="font-size: 10px; color: #888; margin-bottom: 5px; text-transform: uppercase;">ESQUEMA GARANTIA 10 PONTOS (8 JOGOS)</div>
+                            <div style="font-size: 11px; color: #00d2ff;">Jogos Fixos Econômicos</div>
+                          </div>`;
+        container.innerHTML = infoHtml;
+
+        jogosFixos.forEach((numerosJogo, idx) => {
+            // Ordena para garantir visualização correta
+            numerosJogo.sort((a, b) => a - b);
+            
+            // Renderiza
+            const row = document.createElement('div');
+            row.className = 'game-row';
+            row.innerHTML = `<div class="game-label">JOGO ${idx+1}</div>`;
+            
+            numerosJogo.forEach((n, j) => {
+                row.innerHTML += `<div class="bola" style="width:35px; height:35px; font-size:14px; background-color:${jogo.color}; animation-delay:${j*0.05}s">${String(n).padStart(2, '0')}</div>`;
+            });
+            
+            container.appendChild(row);
+        });
+
+        adicionarAoHistorico(`Garantia 10 Pts (8)`, [], jogo.color);
+        document.getElementById('btnSimularLucro').style.display = 'block';
+        simularLucroRotacao();
+        confetti({ particleCount: 150, spread: 100, origin: { y: 0.6 } });
+    }
+
+    function gerarEsquemaFechamento4(jogo, container, btnCopiar) {
+        container.innerHTML = '';
+
+        // 5 Números fixos por jogo conforme o esquema
+        const jogosFixosBase = [
+            [1, 5, 13, 20, 22],
+            [2, 6, 15, 17, 24],
+            [3, 8, 12, 21, 25],
+            [3, 4, 10, 12, 25],
+            [3, 7, 14, 16, 23],
+            [6, 9, 11, 18, 19],
+            [7, 12, 14, 16, 25],
+            [4, 8, 10, 21, 23],
+            [9, 15, 17, 18, 19],
+            [9, 11, 18, 19, 24]
+        ];
+
+        // Exibir Info
+        const infoHtml = `<div style="width: 100%; text-align: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px dashed rgba(255,255,255,0.1);">
+                            <div style="font-size: 10px; color: #888; margin-bottom: 5px; text-transform: uppercase;">ESQUEMA FECHAMENTO 4 DEZENAS (10 JOGOS)</div>
+                            <div style="font-size: 11px; color: #00d2ff;">5 Fixas Estratégicas + 10 Aleatórias</div>
+                          </div>`;
+        container.innerHTML = infoHtml;
+
+        jogosFixosBase.forEach((fixas, idx) => {
+            // Pool de números disponíveis (excluindo as fixas)
+            const disponiveis = Array.from({length: 25}, (_, i) => i + 1).filter(n => !fixas.includes(n));
+            
+            // Seleciona 10 aleatórios para completar 15
+            const aleatorios = disponiveis.sort(() => Math.random() - 0.5).slice(0, 10);
+            
+            const numerosJogo = [...fixas, ...aleatorios].sort((a, b) => a - b);
+
+            const row = document.createElement('div');
+            row.className = 'game-row';
+            row.innerHTML = `<div class="game-label">JOGO ${idx+1}</div>`;
+            
+            numerosJogo.forEach((n, j) => {
+                const isFixa = fixas.includes(n);
+                const styleExtra = isFixa ? 'border: 1px solid #ffd700; box-shadow: 0 0 3px #ffd700;' : '';
+                row.innerHTML += `<div class="bola" style="width:35px; height:35px; font-size:14px; background-color:${jogo.color}; animation-delay:${j*0.05}s; ${styleExtra}">${String(n).padStart(2, '0')}</div>`;
+            });
+            
+            container.appendChild(row);
+        });
+
+        adicionarAoHistorico(`Fechamento 4 Dez`, [], jogo.color);
+        document.getElementById('btnSimularLucro').style.display = 'block';
+        simularLucroRotacao();
+        confetti({ particleCount: 150, spread: 100, origin: { y: 0.6 } });
+    }
+
+    function gerarEsquemaFechamento3(jogo, container, btnCopiar) {
+        container.innerHTML = '';
+
+        // 4 Números fixos por jogo conforme o esquema (1-4, 5-8, etc)
+        const jogosFixosBase = [
+            [1, 2, 3, 4],
+            [5, 6, 7, 8],
+            [9, 10, 11, 12],
+            [13, 14, 15, 16],
+            [17, 18, 19, 20],
+            [21, 22, 23, 24]
+        ];
+
+        // Exibir Info
+        const infoHtml = `<div style="width: 100%; text-align: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px dashed rgba(255,255,255,0.1);">
+                            <div style="font-size: 10px; color: #888; margin-bottom: 5px; text-transform: uppercase;">ESQUEMA FECHAMENTO 3 DEZENAS (6 JOGOS)</div>
+                            <div style="font-size: 11px; color: #00d2ff;">4 Fixas Sequenciais + 11 Aleatórias</div>
+                          </div>`;
+        container.innerHTML = infoHtml;
+
+        jogosFixosBase.forEach((fixas, idx) => {
+            // Pool de números disponíveis (excluindo as fixas)
+            const disponiveis = Array.from({length: 25}, (_, i) => i + 1).filter(n => !fixas.includes(n));
+            
+            // Seleciona 11 aleatórios para completar 15
+            const aleatorios = disponiveis.sort(() => Math.random() - 0.5).slice(0, 11);
+            
+            const numerosJogo = [...fixas, ...aleatorios].sort((a, b) => a - b);
+
+            const row = document.createElement('div');
+            row.className = 'game-row';
+            row.innerHTML = `<div class="game-label">JOGO ${idx+1}</div>`;
+            
+            numerosJogo.forEach((n, j) => {
+                const isFixa = fixas.includes(n);
+                const styleExtra = isFixa ? 'border: 1px solid #ffd700; box-shadow: 0 0 3px #ffd700;' : '';
+                row.innerHTML += `<div class="bola" style="width:35px; height:35px; font-size:14px; background-color:${jogo.color}; animation-delay:${j*0.05}s; ${styleExtra}">${String(n).padStart(2, '0')}</div>`;
+            });
+            
+            container.appendChild(row);
+        });
+
+        adicionarAoHistorico(`Fechamento 3 Dez`, [], jogo.color);
+        document.getElementById('btnSimularLucro').style.display = 'block';
+        simularLucroRotacao();
+        confetti({ particleCount: 150, spread: 100, origin: { y: 0.6 } });
+    }
+
+    function gerarEsquemaExclusao3(jogo, container, btnCopiar) {
+        container.innerHTML = '';
+
+        // 1. Excluir 3 dezenas aleatoriamente
+        const todosNumeros = Array.from({length: jogo.max}, (_, i) => i + 1);
+        const embaralhados = todosNumeros.sort(() => Math.random() - 0.5);
+        
+        const excluidas = embaralhados.slice(22).sort((a,b) => a-b);
+        const variaveis = embaralhados.slice(0, 22).sort((a,b) => a-b); // As 22 restantes (D01 a D22)
+
+        // Exibir Info
+        const infoHtml = `<div style="width: 100%; text-align: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px dashed rgba(255,255,255,0.1);">
+                            <div style="font-size: 10px; color: #888; margin-bottom: 5px; text-transform: uppercase;">ESQUEMA EXCLUSÃO 3 DEZENAS (6 JOGOS)</div>
+                            <div style="font-size: 10px; color: #ff3333; display: flex; align-items: center; justify-content: center; gap: 5px;">
+                                <span>🚫 EXCLUÍDAS:</span>
+                                ${excluidas.map(n => `<span style="background: rgba(255, 51, 51, 0.2); border: 1px solid #ff3333; padding: 1px 5px; border-radius: 3px;">${String(n).padStart(2,'0')}</span>`).join('')}
+                            </div>
+                          </div>`;
+        container.innerHTML = infoHtml;
+
+        // Matriz de índices para as 22 variáveis (0 a 21)
+        const matrizIndices = [
+            [0, 1, 2, 3, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21], // Jogo 1
+            [4, 5, 6, 7, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21], // Jogo 2
+            [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 14, 19, 20, 21],       // Jogo 3
+            [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 16, 17, 18],       // Jogo 4
+            [0, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21], // Jogo 5
+            [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]        // Jogo 6
+        ];
+
+        matrizIndices.forEach((indices, idx) => {
+            const numerosJogo = indices.map(i => variaveis[i]).sort((a, b) => a - b);
+
+            const row = document.createElement('div');
+            row.className = 'game-row';
+            row.innerHTML = `<div class="game-label">JOGO ${idx+1}</div>`;
+            
+            numerosJogo.forEach((n, j) => {
+                row.innerHTML += `<div class="bola" style="width:35px; height:35px; font-size:14px; background-color:${jogo.color}; animation-delay:${j*0.05}s">${String(n).padStart(2, '0')}</div>`;
+            });
+            
+            container.appendChild(row);
+        });
+
+        adicionarAoHistorico(`Exclusão 3 Dez`, [], jogo.color);
+        document.getElementById('btnSimularLucro').style.display = 'block';
+        simularLucroRotacao();
+        confetti({ particleCount: 150, spread: 100, origin: { y: 0.6 } });
+    }
+
+    function adicionarBotoesExtras7Coringas(container) {
+        const btnSugerir = document.createElement('button');
+        btnSugerir.id = 'btnSugerir7Coringas';
+        btnSugerir.innerText = '🔥 USAR 7 CORINGAS MAIS QUENTES (ÚLTIMOS 50)';
+        btnSugerir.style.marginTop = '10px';
+        btnSugerir.style.background = 'linear-gradient(90deg, #ff512f, #dd2476)';
+        btnSugerir.style.fontSize = '12px';
+        btnSugerir.onclick = sugerir7CoringasQuentes;
+        container.appendChild(btnSugerir);
+        
+        const btnGarantia = document.createElement('button');
+        btnGarantia.innerText = '🧪 SIMULAR GARANTIA (ACERTANDO OS 7)';
+        btnGarantia.style.marginTop = '15px';
+        btnGarantia.style.background = 'linear-gradient(90deg, #00d2ff, #007bff)';
+        btnGarantia.style.color = '#fff';
+        btnGarantia.style.fontWeight = 'bold';
+        btnGarantia.style.boxShadow = '0 0 10px rgba(0, 210, 255, 0.4)';
+        btnGarantia.onclick = simularGarantia7Coringas;
+        container.appendChild(btnGarantia);
+    }
+
+    async function sugerirCoringasQuentes() {
+        const btn = document.getElementById('btnSugerirCoringas');
+        if(btn) {
+            btn.innerText = "⏳ ANALISANDO ESTATÍSTICAS...";
+            btn.disabled = true;
+        }
+
+        try {
+            const historico = await buscarHistoricoReal('lotofacil', 50);
+            if (!historico) throw new Error("Falha ao buscar histórico");
+
+            const frequencia = {};
+            historico.forEach(sorteio => sorteio.forEach(n => frequencia[n] = (frequencia[n] || 0) + 1));
+            
+            // Pega os 8 mais frequentes
+            const top8 = Object.entries(frequencia)
+                .sort((a, b) => b[1] - a[1] || a[0] - b[0])
+                .slice(0, 8)
+                .map(x => parseInt(x[0]));
+
+            const select = document.getElementById('tipoJogo');
+            const container = document.getElementById('resultado');
+            const btnCopiar = document.getElementById('btnCopiar');
+            const jogo = config[select.value];
+
+            showToast(`Coringas Quentes Encontrados: ${top8.join(', ')}`, "success");
+            
+            gerarEsquema8Coringas(jogo, container, btnCopiar, top8);
+
+        } catch (e) {
+            showToast("Erro ao analisar números quentes.", "error");
+            if(btn) {
+                btn.innerText = "🔥 USAR 8 CORINGAS MAIS QUENTES (ÚLTIMOS 50)";
+                btn.disabled = false;
+            }
+        }
+    }
+
+    async function sugerir7CoringasQuentes() {
+        const btn = document.getElementById('btnSugerir7Coringas');
+        if(btn) {
+            btn.innerText = "⏳ ANALISANDO ESTATÍSTICAS...";
+            btn.disabled = true;
+        }
+
+        try {
+            const historico = await buscarHistoricoReal('lotofacil', 50);
+            if (!historico) throw new Error("Falha ao buscar histórico");
+
+            const frequencia = {};
+            historico.forEach(sorteio => sorteio.forEach(n => frequencia[n] = (frequencia[n] || 0) + 1));
+            
+            const top7 = Object.entries(frequencia)
+                .sort((a, b) => b[1] - a[1] || a[0] - b[0])
+                .slice(0, 7)
+                .map(x => parseInt(x[0]));
+
+            const select = document.getElementById('tipoJogo');
+            const container = document.getElementById('resultado');
+            const btnCopiar = document.getElementById('btnCopiar');
+            const jogo = config[select.value];
+
+            showToast(`7 Coringas Quentes Encontrados: ${top7.join(', ')}`, "success");
+            
+            gerarEsquema7Coringas(jogo, container, btnCopiar, top7);
+
+        } catch (e) {
+            showToast("Erro ao analisar números quentes.", "error");
+            if(btn) {
+                btn.innerText = "🔥 USAR 7 CORINGAS MAIS QUENTES (ÚLTIMOS 50)";
+                btn.disabled = false;
+            }
+        }
+    }
+
+    function simularGarantia8Coringas(event) {
+        const container = document.getElementById('resultado');
+        const rows = container.querySelectorAll('.game-row');
+        
+        if (rows.length === 0) {
+            showToast("Gere o esquema primeiro.", "warning");
+            return;
+        }
+
+        // Extrai os jogos
+        const jogos = [];
+        rows.forEach(row => {
+            jogos.push(Array.from(row.querySelectorAll('.bola')).map(b => parseInt(b.innerText)));
+        });
+
+        // Identifica os 8 Coringas (Interseção de todos os jogos)
+        let coringas = jogos[0];
+        for(let i=1; i<jogos.length; i++) {
+            coringas = coringas.filter(n => jogos[i].includes(n));
+        }
+
+        if (coringas.length !== 8) {
+            showToast("Erro: Não foi possível identificar os 8 coringas fixos.", "error");
+            return;
+        }
+
+        const btn = event.target;
+        const originalText = btn.innerText;
+        btn.innerText = "⏳ SIMULANDO 10.000 SORTEIOS...";
+        btn.disabled = true;
+
+        // Timeout para permitir atualização da UI
+        setTimeout(() => {
+            const totalSimulacoes = 10000;
+            const stats = { 11: 0, 12: 0, 13: 0, 14: 0, 15: 0 };
+            const todosNumeros = Array.from({length: 25}, (_, i) => i + 1);
+            const variaveis = todosNumeros.filter(n => !coringas.includes(n));
+
+            for(let i=0; i<totalSimulacoes; i++) {
+                // Simula sorteio: 8 coringas (fixos) + 7 variáveis aleatórias
+                const sorteioVariaveis = [];
+                const pool = [...variaveis];
+                for(let k=0; k<7; k++) {
+                    const idx = Math.floor(Math.random() * pool.length);
+                    sorteioVariaveis.push(pool[idx]);
+                    pool.splice(idx, 1);
+                }
+                const sorteio = [...coringas, ...sorteioVariaveis];
+                
+                // Verifica o melhor acerto entre os 9 jogos para este sorteio
+                let melhorAcerto = 0;
+                jogos.forEach(jogo => {
+                    const acertos = jogo.filter(n => sorteio.includes(n)).length;
+                    if (acertos > melhorAcerto) melhorAcerto = acertos;
+                });
+
+                if (stats[melhorAcerto] !== undefined) stats[melhorAcerto]++;
+            }
+
+            // Renderiza Resultados
+            const old = document.getElementById('simulacaoGarantiaDiv');
+            if(old) old.remove();
+
+            const div = document.createElement('div');
+            div.id = 'simulacaoGarantiaDiv';
+            div.style.marginTop = '15px';
+            div.style.padding = '15px';
+            div.style.background = 'rgba(0,0,0,0.4)';
+            div.style.border = '1px solid #00d2ff';
+            div.style.borderRadius = '8px';
+            div.style.textAlign = 'center';
+            div.style.animation = 'slideDown 0.3s ease';
+
+            div.innerHTML = `
+                <h4 style="margin: 0 0 10px 0; color: #00d2ff; font-size: 14px;">🧪 RESULTADO DA SIMULAÇÃO (${totalSimulacoes} Testes)</h4>
+                <p style="font-size: 11px; color: #ccc; margin-bottom: 15px;">Cenário: Acertando os 8 números coringas fixos + 7 variáveis aleatórias.</p>
+                <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px;">
+                    <div style="background:rgba(255,255,255,0.05); padding:5px; border-radius:4px;"><div style="font-size:10px; color:#aaa;">11 Pts</div><div style="color:#fff; font-weight:bold;">${((stats[11]/totalSimulacoes)*100).toFixed(1)}%</div></div>
+                    <div style="background:rgba(255,255,255,0.05); padding:5px; border-radius:4px;"><div style="font-size:10px; color:#aaa;">12 Pts</div><div style="color:#fff; font-weight:bold;">${((stats[12]/totalSimulacoes)*100).toFixed(1)}%</div></div>
+                    <div style="background:rgba(255,255,255,0.05); padding:5px; border-radius:4px;"><div style="font-size:10px; color:#aaa;">13 Pts</div><div style="color:#fff; font-weight:bold;">${((stats[13]/totalSimulacoes)*100).toFixed(1)}%</div></div>
+                    <div style="background:rgba(255,255,255,0.05); padding:5px; border-radius:4px;"><div style="font-size:10px; color:#aaa;">14 Pts</div><div style="color:#fff; font-weight:bold;">${((stats[14]/totalSimulacoes)*100).toFixed(1)}%</div></div>
+                    <div style="background:rgba(255,255,255,0.05); padding:5px; border-radius:4px;"><div style="font-size:10px; color:#aaa;">15 Pts</div><div style="color:#ffd700; font-weight:bold;">${((stats[15]/totalSimulacoes)*100).toFixed(1)}%</div></div>
+                </div>
+                <div style="font-size: 10px; color: #888; margin-top: 10px;">*Probabilidade de ter pelo menos um bilhete premiado com a pontuação indicada.</div>
+            `;
+            
+            container.appendChild(div);
+            
+            btn.innerText = originalText;
+            btn.disabled = false;
+        }, 100);
+    }
+
+    function simularGarantia7Coringas(event) {
+        const container = document.getElementById('resultado');
+        const rows = container.querySelectorAll('.game-row');
+        
+        if (rows.length === 0) {
+            showToast("Gere o esquema primeiro.", "warning");
+            return;
+        }
+
+        const jogos = [];
+        rows.forEach(row => {
+            jogos.push(Array.from(row.querySelectorAll('.bola')).map(b => parseInt(b.innerText)));
+        });
+
+        let coringas = jogos[0];
+        for(let i=1; i<jogos.length; i++) {
+            coringas = coringas.filter(n => jogos[i].includes(n));
+        }
+
+        if (coringas.length !== 7) {
+            showToast("Erro: Não foi possível identificar os 7 coringas fixos.", "error");
+            return;
+        }
+
+        const btn = event.target;
+        const originalText = btn.innerText;
+        btn.innerText = "⏳ SIMULANDO 10.000 SORTEIOS...";
+        btn.disabled = true;
+
+        setTimeout(() => {
+            const totalSimulacoes = 10000;
+            const stats = { 11: 0, 12: 0, 13: 0, 14: 0, 15: 0 };
+            const todosNumeros = Array.from({length: 25}, (_, i) => i + 1);
+            const variaveis = todosNumeros.filter(n => !coringas.includes(n));
+
+            for(let i=0; i<totalSimulacoes; i++) {
+                // Simula sorteio: 7 coringas (fixos) + 8 variáveis aleatórias
+                const sorteioVariaveis = [];
+                const pool = [...variaveis];
+                for(let k=0; k<8; k++) {
+                    const idx = Math.floor(Math.random() * pool.length);
+                    sorteioVariaveis.push(pool[idx]);
+                    pool.splice(idx, 1);
+                }
+                const sorteio = [...coringas, ...sorteioVariaveis];
+                
+                let melhorAcerto = 0;
+                jogos.forEach(jogo => {
+                    const acertos = jogo.filter(n => sorteio.includes(n)).length;
+                    if (acertos > melhorAcerto) melhorAcerto = acertos;
+                });
+
+                if (stats[melhorAcerto] !== undefined) stats[melhorAcerto]++;
+            }
+
+            const old = document.getElementById('simulacaoGarantiaDiv');
+            if(old) old.remove();
+
+            const div = document.createElement('div');
+            div.id = 'simulacaoGarantiaDiv';
+            div.style.marginTop = '15px';
+            div.style.padding = '15px';
+            div.style.background = 'rgba(0,0,0,0.4)';
+            div.style.border = '1px solid #00d2ff';
+            div.style.borderRadius = '8px';
+            div.style.textAlign = 'center';
+            div.style.animation = 'slideDown 0.3s ease';
+
+            div.innerHTML = `
+                <h4 style="margin: 0 0 10px 0; color: #00d2ff; font-size: 14px;">🧪 RESULTADO DA SIMULAÇÃO (${totalSimulacoes} Testes)</h4>
+                <p style="font-size: 11px; color: #ccc; margin-bottom: 15px;">Cenário: Acertando os 7 números coringas fixos + 8 variáveis aleatórias.</p>
+                <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px;">
+                    <div style="background:rgba(255,255,255,0.05); padding:5px; border-radius:4px;"><div style="font-size:10px; color:#aaa;">11 Pts</div><div style="color:#fff; font-weight:bold;">${((stats[11]/totalSimulacoes)*100).toFixed(1)}%</div></div>
+                    <div style="background:rgba(255,255,255,0.05); padding:5px; border-radius:4px;"><div style="font-size:10px; color:#aaa;">12 Pts</div><div style="color:#fff; font-weight:bold;">${((stats[12]/totalSimulacoes)*100).toFixed(1)}%</div></div>
+                    <div style="background:rgba(255,255,255,0.05); padding:5px; border-radius:4px;"><div style="font-size:10px; color:#aaa;">13 Pts</div><div style="color:#fff; font-weight:bold;">${((stats[13]/totalSimulacoes)*100).toFixed(1)}%</div></div>
+                    <div style="background:rgba(255,255,255,0.05); padding:5px; border-radius:4px;"><div style="font-size:10px; color:#aaa;">14 Pts</div><div style="color:#fff; font-weight:bold;">${((stats[14]/totalSimulacoes)*100).toFixed(1)}%</div></div>
+                    <div style="background:rgba(255,255,255,0.05); padding:5px; border-radius:4px;"><div style="font-size:10px; color:#aaa;">15 Pts</div><div style="color:#ffd700; font-weight:bold;">${((stats[15]/totalSimulacoes)*100).toFixed(1)}%</div></div>
+                </div>
+            `;
+            
+            container.appendChild(div);
+            btn.innerText = originalText;
+            btn.disabled = false;
+        }, 100);
+    }
+
+    async function simularLucroRotacao() {
+        const container = document.getElementById('resultado');
+        const btnSimular = document.getElementById('btnSimularLucro');
+        
+        // Extrai os jogos gerados na tela
+        const rows = container.querySelectorAll('.game-row');
+        const jogos = [];
+        
+        if (rows.length > 0) {
+            rows.forEach(row => {
+                jogos.push(Array.from(row.querySelectorAll('.bola')).map(b => parseInt(b.innerText)));
+            });
+        } else {
+            // Captura jogo único (estratégias padrão)
+            const bolas = container.querySelectorAll('.bola');
+            if (bolas.length > 0) {
+                jogos.push(Array.from(bolas).map(b => parseInt(b.innerText)));
+            }
+        }
+
+        if (jogos.length === 0) {
+            showToast("Por favor, gere um jogo primeiro para realizar a simulação.", "warning");
+            return;
+        }
+
+        const originalText = btnSimular.innerText;
+        btnSimular.innerText = "⏳ CALCULANDO...";
+        btnSimular.disabled = true;
+
+        // Determina a quantidade de concursos para simulação
+        const manualQtdInput = document.getElementById('qtdAnaliseManual');
+        let qtdSimulacao = 10;
+        if (manualQtdInput && manualQtdInput.value && parseInt(manualQtdInput.value) > 0) {
+            qtdSimulacao = parseInt(manualQtdInput.value);
+        } else {
+            qtdSimulacao = Math.max(10, qtdResultadosOficiais);
+        }
+
+        // Busca histórico
+        const historico = await buscarHistoricoReal('lotofacil', qtdSimulacao);
+        
+        if (!historico) {
+            showToast("Erro ao buscar dados históricos.", "error");
+            btnSimular.innerText = originalText;
+            btnSimular.disabled = false;
+            return;
+        }
+
+        // Cálculos Financeiros
+        const precoAposta = parseFloat(document.getElementById('valorAposta').value) || 3.00;
+        const premios = { 11: 6, 12: 12, 13: 30, 14: 1500, 15: 1500000 }; // Estimativas para 14/15
+        
+        let saldoEvolucao = [];
+        let saldoAtual = 0;
+        let custoTotal = 0;
+        let ganhoTotal = 0;
+        const custoPorSorteio = jogos.length * precoAposta;
+        
+        // Inverte para ordem cronológica (do mais antigo para o mais recente)
+        const historicoCronologico = [...historico].reverse();
+
+        let tabelaDetalhes = `<div style="max-height: 150px; overflow-y: auto; margin-top: 15px; border: 1px solid rgba(255,255,255,0.1); border-radius: 5px;">
+                                <table class="stats-table" style="margin-top: 0; width: 100%;">
+                                    <thead style="position: sticky; top: 0; background: #1b2735; z-index: 1;">
+                                        <tr>
+                                            <th style="font-size: 10px; padding: 5px;">#</th>
+                                            <th style="font-size: 10px; padding: 5px;">MELHOR ACERTO</th>
+                                            <th style="font-size: 10px; padding: 5px;">PRÊMIO</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>`;
+
+        historicoCronologico.forEach((sorteio, index) => {
+            let ganhoSorteio = 0;
+            let melhorAcerto = 0;
+
+            jogos.forEach(jogo => {
+                const acertos = jogo.filter(n => sorteio.includes(n)).length;
+                if (acertos > melhorAcerto) melhorAcerto = acertos;
+                if (premios[acertos]) ganhoSorteio += premios[acertos];
+            });
+            
+            saldoAtual = saldoAtual - custoPorSorteio + ganhoSorteio;
+            saldoEvolucao.push(saldoAtual);
+            ganhoTotal += ganhoSorteio;
+            custoTotal += custoPorSorteio;
+
+            // Adiciona linha na tabela
+            const corAcerto = melhorAcerto >= 11 ? '#00ff9d' : '#888';
+            const corPremio = ganhoSorteio > 0 ? '#ffd700' : '#666';
+            
+            tabelaDetalhes += `<tr>
+                                <td style="font-size: 11px; color: #aaa; padding: 4px;">${index + 1}</td>
+                                <td style="font-size: 11px; color: ${corAcerto}; font-weight: ${melhorAcerto >= 11 ? 'bold' : 'normal'}; padding: 4px;">${melhorAcerto} pts</td>
+                                <td style="font-size: 11px; color: ${corPremio}; padding: 4px;">R$ ${ganhoSorteio.toFixed(2)}</td>
+                               </tr>`;
+        });
+
+        tabelaDetalhes += `</tbody></table></div>`;
+
+        const saldo = saldoAtual;
+        const cor = saldo >= 0 ? '#00ff9d' : '#ff3333';
+
+        // Toca som de "Caixa Registradora" se houver lucro
+        if (saldo > 0) {
+            const audio = new Audio('https://www.myinstants.com/media/sounds/ka-ching.mp3');
+            audio.play().catch(e => console.warn("Som bloqueado:", e));
+
+            // Animação de Chuva de Dinheiro
+            const end = Date.now() + 3000;
+            const colors = ['#2ecc71', '#f1c40f', '#85bb65']; // Verdes e Dourado
+
+            (function frame() {
+                confetti({
+                    particleCount: 4,
+                    angle: 60,
+                    spread: 55,
+                    origin: { x: 0 },
+                    colors: colors,
+                    shapes: ['square'], // Formato de "notas"
+                    scalar: 1.2
+                });
+                confetti({
+                    particleCount: 4,
+                    angle: 120,
+                    spread: 55,
+                    origin: { x: 1 },
+                    colors: colors,
+                    shapes: ['square'],
+                    scalar: 1.2
+                });
+
+                if (Date.now() < end) {
+                    requestAnimationFrame(frame);
+                }
+            }());
+        }
+
+        // Exibe Resultado
+        const divSimulacao = document.createElement('div');
+        divSimulacao.style.marginTop = '15px';
+        divSimulacao.style.padding = '15px';
+        divSimulacao.style.background = 'rgba(0,0,0,0.3)';
+        divSimulacao.style.border = `1px solid ${cor}`;
+        divSimulacao.style.borderRadius = '8px';
+        divSimulacao.style.textAlign = 'center';
+        
+        divSimulacao.innerHTML = `
+            <h4 style="margin: 0 0 10px 0; color: #fff; font-size: 14px;">📊 RESULTADO DA SIMULAÇÃO</h4>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
+                <div><div style="font-size: 10px; color: #aaa;">INVESTIMENTO</div><div style="font-size: 14px; color: #ff3333;">R$ ${custoTotal.toFixed(2)}</div></div>
+                <div><div style="font-size: 10px; color: #aaa;">RETORNO</div><div style="font-size: 14px; color: #00ff9d;">R$ ${ganhoTotal.toFixed(2)}</div></div>
+                <div><div style="font-size: 10px; color: #aaa;">LUCRO/PREJUÍZO</div><div style="font-size: 14px; color: ${cor}; font-weight: bold;">R$ ${saldo.toFixed(2)}</div></div>
+            </div>
+            <div style="margin-top: 15px; height: 150px;"><canvas id="graficoEvolucaoSaldo"></canvas></div>
+            ${tabelaDetalhes}
+            <div style="font-size: 9px; color: #666; margin-top: 5px;">*Baseado em prêmios fixos estimados.</div>
+        `;
+
+        // Remove simulação anterior se houver
+        const oldSim = document.querySelector('.simulacao-result');
+        if(oldSim) oldSim.remove();
+        
+        divSimulacao.className = 'simulacao-result';
+        btnSimular.parentNode.insertBefore(divSimulacao, btnSimular.nextSibling);
+
+        // Renderiza Gráfico de Evolução
+        new Chart(document.getElementById('graficoEvolucaoSaldo'), {
+            type: 'line',
+            data: {
+                labels: Array.from({length: saldoEvolucao.length}, (_, i) => i + 1),
+                datasets: [{
+                    label: 'Saldo Acumulado (R$)',
+                    data: saldoEvolucao,
+                    borderColor: cor,
+                    backgroundColor: saldo >= 0 ? 'rgba(0, 255, 157, 0.1)' : 'rgba(255, 51, 51, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { display: false },
+                    y: { ticks: { color: '#888', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.05)' } }
+                }
+            }
+        });
+
+        btnSimular.innerText = originalText;
+        btnSimular.disabled = false;
+    }
+
+    async function buscarHistoricoReal(tipo, quantidade) {
+        if (cacheHistorico[tipo] && cacheHistorico[tipo].length >= quantidade) {
+            return cacheHistorico[tipo].slice(0, quantidade);
+        }
+
+        try {
+            // 1. Pega o último sorteio
+            const respLatest = await fetch(`https://loteriascaixa-api.herokuapp.com/api/${tipo}/latest`);
+            const latest = await respLatest.json();
+            const ultimoConcurso = latest.concurso;
+
+            // 2. Busca os anteriores em paralelo
+            const promessas = [];
+            const historico = [latest.dezenas.map(Number)];
+
+            for (let i = 1; i < quantidade; i++) {
+                promessas.push(
+                    fetch(`https://loteriascaixa-api.herokuapp.com/api/${tipo}/${ultimoConcurso - i}`)
+                        .then(r => r.json())
+                        .then(d => d.dezenas.map(Number))
+                        .catch(() => null)
+                );
+            }
+
+            const resultados = await Promise.all(promessas);
+            const final = historico.concat(resultados.filter(r => r !== null));
+            
+            cacheHistorico[tipo] = final;
+            return final;
+        } catch (error) {
+            console.error("Erro ao buscar histórico:", error);
+            return null;
+        }
+    }
+
+    function analisarSistemaPorcentagem(jogo, dadosReais) {
+        // Usa dados reais se disponíveis, senão simula
+        let historico = dadosReais || [];
+        if (historico.length === 0) {
+            historico = gerarSimulacao(jogo, 10);
+        }
+
+        // Analisa frequência
+        let frequencia = {};
+        let nosUltimos5 = new Set();
+
+        historico.forEach((sorteio, index) => {
+            sorteio.forEach(num => {
+                frequencia[num] = (frequencia[num] || 0) + 1;
+                // Se o sorteio for um dos últimos 5 (índices 0 a 4, assumindo 0 como mais recente)
+                if (index < 5) nosUltimos5.add(num);
+            });
+        });
+
+        // Filtra: Sorteados pelo menos 2x no total E pelo menos 1x nos últimos 5
+        return Object.keys(frequencia)
+            .map(Number)
+            .filter(n => frequencia[n] >= 2 && nosUltimos5.has(n));
+    }
+
+    function analisarGraficoSorteios(jogo, dadosReais) {
+        let historico = dadosReais || [];
+        if (historico.length === 0) {
+            historico = gerarSimulacao(jogo, 20);
+        }
+
+        let frequencia = {};
+        historico.forEach(sorteio => {
+            sorteio.forEach(n => frequencia[n] = (frequencia[n] || 0) + 1);
+        });
+        return frequencia;
+    }
+
+    function analisarVizinhos(dadosReais) {
+        if (!dadosReais) return [];
+        let paresFreq = {};
+        dadosReais.forEach(sorteio => {
+            sorteio.sort((a,b)=>a-b);
+            for(let i=0; i<sorteio.length-1; i++) {
+                if (sorteio[i+1] === sorteio[i] + 1) {
+                    const key = `${sorteio[i]}-${sorteio[i+1]}`;
+                    paresFreq[key] = (paresFreq[key]||0) + 1;
+                }
+            }
+        });
+        return Object.entries(paresFreq)
+            .sort((a,b) => b[1]-a[1])
+            .map(entry => entry[0].split('-').map(Number));
+    }
+
+    function gerarSimulacao(jogo, qtd) {
+        let lista = [];
+        for (let i = 0; i < qtd; i++) {
+            let sorteio = new Set();
+            while(sorteio.size < jogo.qtd) {
+                sorteio.add(Math.floor(Math.random() * jogo.max) + 1);
+            }
+            lista.push(Array.from(sorteio));
+        }
+        return lista;
+    }
+
+    function sortearComPeso(pesos, max) {
+        // Cria uma lista onde números mais frequentes aparecem mais vezes
+        let pool = [];
+        for (let i = 1; i <= max; i++) {
+            let peso = (pesos[i] || 0) + 1; // +1 para garantir que todos tenham chance mínima
+            for (let k = 0; k < peso; k++) pool.push(i);
+        }
+        return pool[Math.floor(Math.random() * pool.length)];
+    }
+
+    function renderizarGrafico(jogo, frequencia) {
+        const grid = document.getElementById('heatmapGrid');
+        const container = document.getElementById('heatmapContainer');
+        grid.innerHTML = '';
+        container.style.display = 'block';
+
+        // Encontrar maior frequência para escala de cor
+        let maxFreq = 0;
+        Object.values(frequencia).forEach(v => { if(v > maxFreq) maxFreq = v; });
+
+        for (let i = 1; i <= jogo.max; i++) {
+            let div = document.createElement('div');
+            div.className = 'heatmap-item';
+            div.innerText = i;
+            
+            let freq = frequencia[i] || 0;
+            if (freq > 0) {
+                if (freq >= maxFreq - 1 && maxFreq > 1) div.classList.add('very-hot');
+                else div.classList.add('hot');
+            }
+            grid.appendChild(div);
+        }
+    }
+
+    function toggleRadarIdeal() {
+        mostrarIdealRadar = !mostrarIdealRadar;
+        const btn = document.getElementById('btnToggleRadar');
+        if (btn) {
+            btn.innerText = mostrarIdealRadar ? '👁️ OCULTAR JOGO IDEAL' : '🆚 COMPARAR COM IDEAL';
+            btn.style.background = mostrarIdealRadar ? 'rgba(255, 215, 0, 0.2)' : 'rgba(0, 210, 255, 0.2)';
+            btn.style.borderColor = mostrarIdealRadar ? '#ffd700' : 'rgba(0, 210, 255, 0.4)';
+        }
+        if (lastRadarData) renderRadarChart(lastRadarData.numeros, lastRadarData.scores, lastRadarData.total);
+    }
+
+    function renderRadarChart(numeros, allScores, totalJogosAnalise) {
+        lastRadarData = { numeros, scores: allScores, total: totalJogosAnalise };
+        const ctx = document.getElementById('radarChart').getContext('2d');
+        const container = document.getElementById('radarContainer');
+        container.style.display = 'block';
+
+        // Calcular médias dos atributos para os números selecionados
+        let somaRecencia = 0;
+        let somaConsistencia = 0;
+        let somaAtraso = 0;
+        let somaScore = 0;
+        let pares = 0;
+
+        numeros.forEach(n => {
+            // Encontra os dados do número na lista de scores (ou recalcula se não achar)
+            const dados = allScores.find(s => s.numero === n);
+            if (dados) {
+                somaRecencia += dados.detalhes.curto;
+                somaConsistencia += dados.detalhes.longo;
+                somaAtraso += dados.detalhes.atraso;
+                somaScore += dados.pontuacao;
+            }
+            if (n % 2 === 0) pares++;
+        });
+
+        const qtd = numeros.length;
+        // Normalização para escala 0-100 (aproximada para visualização)
+        const avgRecencia = ((somaRecencia / qtd) / 10) * 100; // Base 10 jogos
+        const avgConsistencia = ((somaConsistencia / qtd) / totalJogosAnalise) * 100; // Base total histórico
+        const avgAtraso = (somaAtraso / qtd) * 5; // Multiplicador visual para atraso
+        const avgScore = (somaScore / qtd) * 2; // Multiplicador arbitrário para score IA
+        
+        // Equilíbrio Pares: 100% se for metade pares, 0% se for tudo par ou tudo ímpar
+        const ratioPares = pares / qtd;
+        const equilibrio = (1 - Math.abs(ratioPares - 0.5) * 2) * 100;
+
+        if (radarChartInstance) {
+            radarChartInstance.destroy();
+        }
+
+        const datasets = [{
+            label: 'Perfil do Jogo Gerado',
+            data: [avgRecencia, avgConsistencia, avgAtraso, equilibrio, avgScore],
+            fill: true,
+            backgroundColor: 'rgba(176, 38, 255, 0.2)', // Roxo transparente
+            borderColor: '#b026ff',
+            pointBackgroundColor: '#00d2ff',
+            pointBorderColor: '#fff',
+            pointHoverBackgroundColor: '#fff',
+            pointHoverBorderColor: '#b026ff'
+        }];
+
+        if (mostrarIdealRadar) {
+            datasets.push({
+                label: 'Jogo Ideal (Estatístico)',
+                data: [60, 60, 25, 100, 95], // Valores de referência para um jogo "perfeito"
+                fill: true,
+                backgroundColor: 'rgba(255, 215, 0, 0.1)', // Dourado transparente
+                borderColor: '#ffd700',
+                pointBackgroundColor: '#ffd700',
+                pointBorderColor: '#fff',
+                borderDash: [5, 5]
+            });
+        }
+
+        radarChartInstance = new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['Recência (Curto Prazo)', 'Consistência (Longo Prazo)', 'Atraso Médio', 'Equilíbrio (Pares)', 'Pontuação IA'],
+                datasets: datasets
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        angleLines: { color: 'rgba(255, 255, 255, 0.1)' },
+                        grid: { color: 'rgba(0, 210, 255, 0.1)' },
+                        pointLabels: { color: '#00d2ff', font: { size: 11 } },
+                        ticks: { display: false, backdropColor: 'transparent' },
+                        suggestedMin: 0,
+                        suggestedMax: 100
+                    }
+                },
+                plugins: {
+                    legend: { display: mostrarIdealRadar, labels: { color: '#ccc', font: { size: 10 } } },
+                    title: { display: false }
+                }
+            }
+        });
+    }
+
+    function renderChart(numeros) {
+        const ctx = document.getElementById('graficoParesImpares').getContext('2d');
+        const container = document.getElementById('chartContainer');
+        container.style.display = 'block';
+
+        const pares = numeros.filter(n => n % 2 === 0).length;
+        const impares = numeros.length - pares;
+        const isDark = true; // Sempre dark agora
+
+        if (chartInstance) {
+            chartInstance.destroy();
+        }
+
+        chartInstance = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Pares', 'Ímpares'],
+                datasets: [{
+                    data: [pares, impares],
+                    backgroundColor: ['#00d2ff', '#ff00cc'], // Ciano e Magenta Neon
+                    borderColor: '#ffffff',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom', labels: { color: isDark ? '#fff' : '#666' } },
+                    title: { display: true, text: 'Análise: Pares vs Ímpares', color: isDark ? '#fff' : '#666' }
+                }
+            }
+        });
+    }
+
+    function validarFiltros(numeros, filtros) {
+        numeros.sort((a, b) => a - b);
+
+        // 1. Filtro de Sequência (não permite 3 números seguidos, ex: 1, 2, 3)
+        if (filtros.evitarSequencia) {
+            let sequenciaAtual = 1;
+            for (let i = 1; i < numeros.length; i++) {
+                if (numeros[i] === numeros[i-1] + 1) {
+                    sequenciaAtual++;
+                    if (sequenciaAtual >= (filtros.limitSeq || 3)) return false; // Rejeita o jogo
+                } else {
+                    sequenciaAtual = 1;
+                }
+            }
+        }
+
+        // 2. Filtro Par/Ímpar (Evita tudo par ou tudo ímpar)
+        if (filtros.equilibrioPares) {
+            const pares = numeros.filter(n => n % 2 === 0).length;
+            const total = numeros.length;
+            // Se for tudo par ou tudo ímpar, rejeita
+            if (pares === 0 || pares === total) return false;
+        }
+
+        return true;
+    }
+
+    function copiarNumeros() {
+        const container = document.getElementById('resultado');
+        let texto = '';
+        
+        // Verifica se é rotação (múltiplos jogos)
+        const rows = container.querySelectorAll('.game-row');
+        if (rows.length > 0) {
+            rows.forEach(row => {
+                const bolas = Array.from(row.querySelectorAll('.bola')).map(b => b.innerText).join(' ');
+                texto += bolas + '\n';
+            });
+        } else {
+            texto = Array.from(container.querySelectorAll('.bola')).map(div => div.innerText).join(' ');
+        }
+
+        if (!texto) {
+            showToast("Nenhum jogo gerado para copiar.", "warning");
+            return;
+        }
+
+        navigator.clipboard.writeText(texto).then(() => {
+            const btn = document.getElementById('btnCopiar');
+            const original = btn.innerText;
+            btn.innerText = 'Copiado!';
+            setTimeout(() => btn.innerText = original, 2000);
+        });
+    }
+
+    function adicionarAoHistorico(nome, numeros, cor) {
+        const div = document.getElementById('historicoDiv');
+        const lista = document.getElementById('listaHistorico');
+        
+        const item = document.createElement('li');
+        const nomeJogo = nome.split(' ')[0]; // Pega o nome principal (ex: Mega-Sena)
+        
+        let numerosStr = '';
+        if (numeros.length > 0) {
+            numerosStr = numeros.map(n => String(n).padStart(2, '0')).join(' ');
+        } else {
+            numerosStr = '<span style="font-size:10px; color:#888;">(Múltiplos Jogos Gerados)</span>';
+        }
+        
+        item.innerHTML = `<span class="tag" style="background-color: ${cor}; box-shadow: 0 0 8px ${cor};">${nomeJogo}</span> ${numerosStr}`;
+        
+        lista.insertBefore(item, lista.firstChild);
+        
+        if(lista.children.length > 5) lista.removeChild(lista.lastChild); // Mantém apenas os últimos 5
+    }
+
+    async function consultarSorteioOficial(isInitialCall = true) {
+        if (isInitialCall) {
+            qtdResultadosOficiais = 10;
+        } else {
+            qtdResultadosOficiais += 10;
+        }
+        atualizarIndicadorAnalise();
+
+        const select = document.getElementById('tipoJogo');
+        const div = document.getElementById('resultadoOficial');
+        const tipo = select.value;
+        const jogo = config[tipo];
+
+        div.innerHTML = '<div class="spinner"></div>';
+
+        try {
+            // 1. Pega o último sorteio para referência
+            const respLatest = await fetch(`https://loteriascaixa-api.herokuapp.com/api/${tipo}/latest`);
+            const latest = await respLatest.json();
+            const ultimoConcurso = latest.concurso;
+
+            // 2. Busca os últimos 10 em paralelo
+            const promessas = [];
+            for (let i = 0; i < qtdResultadosOficiais; i++) {
+                promessas.push(fetch(`https://loteriascaixa-api.herokuapp.com/api/${tipo}/${ultimoConcurso - i}`).then(r => r.json()).catch(() => null));
+            }
+            
+            const resultados = await Promise.all(promessas);
+
+            // 3. Renderiza lista
+            let html = '<div class="results-grid">';
+            const frequencia = {}; // Para análise estatística
+
+            resultados.forEach(data => {
+                if(data) {
+                    // Coleta estatísticas
+                    data.dezenas.forEach(n => {
+                        const num = parseInt(n);
+                        frequencia[num] = (frequencia[num] || 0) + 1;
+                    });
+
+                    html += `<div class="result-item">
+                                <div style="font-size: 12px; color: #00d2ff; margin-bottom: 5px; font-weight: bold;">CONCURSO ${data.concurso} (${data.data})</div>
+                                <div style="display: flex; flex-wrap: wrap; gap: 5px; justify-content: center;">
+                                    ${data.dezenas.map(n => `<div class="bola-small" style="background-color: ${jogo.color}; box-shadow: 0 0 5px ${jogo.color};">${n}</div>`).join('')}
+                                </div>
+                             </div>`;
+                }
+            });
+            html += '</div>';
+
+            // 4. Renderiza Estatísticas Automáticas (Top 6)
+            const ordenado = Object.entries(frequencia).sort((a, b) => b[1] - a[1]).slice(0, 6);
+            
+            html += `<div style="width: 100%; margin-top: 15px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.1); text-align: center;">
+                        <h4 style="margin: 0 0 10px 0; font-size: 13px; color: #00d2ff; text-transform: uppercase;">🔥 NÚMEROS MAIS QUENTES (NESTES 10)</h4>
+                        <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">`;
+            
+            ordenado.forEach(([num, qtd]) => {
+                 html += `<div style="display: flex; flex-direction: column; align-items: center;">
+                            <div class="bola-small" style="background-color: ${jogo.color}; box-shadow: 0 0 5px ${jogo.color};">${num}</div>
+                            <span style="font-size: 10px; color: #fff; margin-top: 3px;">${qtd}x</span>
+                           </div>`;
+            });
+            html += '</div></div>';
+
+            // 5. Gráfico de Barras
+            const frios = [];
+            for (let i = 1; i <= jogo.max; i++) {
+                if (!frequencia[i]) frios.push(i);
+            }
+
+            html += `<div style="width: 100%; margin-top: 20px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); text-align: center;">
+                        <h4 style="margin: 0 0 10px 0; font-size: 13px; color: #00d2ff; text-transform: uppercase;">📊 GRÁFICO DE FREQUÊNCIA</h4>
+                        <div style="height: 200px; position: relative;"><canvas id="graficoFrequencia10"></canvas></div>
+                        
+                        <div style="margin-top: 10px; font-size: 11px; color: #aaa; display: flex; align-items: center; justify-content: center; gap: 5px;">
+                            <span style="width: 10px; height: 10px; background-color: #ff3333; display: inline-block; border-radius: 2px;"></span>
+                            Barras vermelhas indicam números que não saíram (0x)
+                        </div>`;
+            
+            if (frios.length > 0) {
+                html += `<button onclick='gerarJogoComExclusao(${JSON.stringify(frios)})' style="margin-top: 15px; background: linear-gradient(90deg, #ff3333, #b30000); font-size: 12px; box-shadow: 0 0 10px rgba(255, 51, 51, 0.4);">🚫 GERAR JOGO SEM OS "FRIOS" (${frios.length})</button>`;
+            }
+            
+            html += `</div>`;
+
+            html += `<button onclick="consultarSorteioOficial(false)" style="margin-top: 20px; background: rgba(0, 210, 255, 0.2); font-size: 12px; border: 1px solid rgba(0, 210, 255, 0.4); box-shadow: none;">➕ CARREGAR MAIS 10</button>`;
+
+            div.innerHTML = html;
+
+            // Renderiza o Gráfico
+            if (chartFrequenciaInstance) chartFrequenciaInstance.destroy();
+            
+            const ctxFreq = document.getElementById('graficoFrequencia10').getContext('2d');
+            const labels = Array.from({length: jogo.max}, (_, i) => i + 1);
+            const dataValues = labels.map(n => frequencia[n] || 0);
+            
+            // Destaque para zeros: cria uma barra pequena vermelha para quem não saiu
+            const chartData = dataValues.map(v => v === 0 ? 0.1 : v);
+            const backgroundColors = dataValues.map(v => v === 0 ? '#ff3333' : jogo.color);
+
+            chartFrequenciaInstance = new Chart(ctxFreq, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Vezes Sorteado',
+                        data: chartData,
+                        backgroundColor: backgroundColors,
+                        borderRadius: 3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, ticks: { color: '#ccc', stepSize: 1 }, grid: { color: 'rgba(255,255,255,0.1)' } },
+                        x: { ticks: { color: '#ccc', font: { size: 10 } }, grid: { display: false } }
+                    },
+                    plugins: { 
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `Vezes Sorteado: ${dataValues[context.dataIndex]}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        } catch (error) {
+            div.innerHTML = `
+                <div style="text-align: center; width: 100%; padding: 10px;">
+                    <p style="color: #ff3333; font-size: 12px; margin-bottom: 10px;">Erro ao buscar resultados. Verifique sua conexão.</p>
+                    <button onclick="consultarSorteioOficial(${isInitialCall})" style="background: #ff3333; width: auto; padding: 8px 15px; font-size: 12px; box-shadow: none;">🔄 TENTAR NOVAMENTE</button>
+                </div>`;
+        }
+    }
+
+    async function verEstatisticas() {
+        const select = document.getElementById('tipoJogo');
+        const container = document.getElementById('tabelaEstatisticas');
+        const qtdInput = document.getElementById('qtdConcursosStats');
+        const qtd = qtdInput ? parseInt(qtdInput.value) : 50;
+        const tipo = select.value;
+        const jogo = config[tipo];
+        
+        container.innerHTML = '<div class="spinner"></div>';
+        container.style.display = 'block';
+
+        // Busca os últimos X sorteios para estatística
+        const historico = await buscarHistoricoReal(tipo, qtd);
+        
+        if (!historico) {
+            container.innerHTML = '<p style="color:red; text-align:center;">Erro ao carregar dados.</p>';
+            return;
+        }
+
+        const frequencia = {};
+        historico.forEach(sorteio => {
+            sorteio.forEach(n => frequencia[n] = (frequencia[n] || 0) + 1);
+        });
+
+        const ordenado = Object.entries(frequencia).sort((a, b) => b[1] - a[1]).slice(0, 10);
+        const totalSorteios = historico.length;
+
+        let html = `<h4 style="margin: 0 0 10px 0; font-size: 14px; color: #00d2ff;">🏆 Top 10 - Últimos ${totalSorteios} Sorteios</h4>
+                    <table class="stats-table"><thead><tr><th>Número</th><th>Vezes Sorteado</th><th>Porcentagem</th></tr></thead><tbody>`;
+        
+        ordenado.forEach(([num, qtd]) => {
+            const porcentagem = ((qtd / totalSorteios) * 100).toFixed(1);
+            html += `<tr><td><div class="bola-small" style="background-color: ${jogo.color}; box-shadow: 0 0 5px ${jogo.color}; margin: 0 auto;">${num}</div></td><td>${qtd}</td><td>${porcentagem}%</td></tr>`;
+        });
+
+        html += '</tbody></table>';
+        container.innerHTML = html;
+    }
+
+    async function gerarGraficoTendencia() {
+        const numInput = document.getElementById('numTendencia');
+        const num = parseInt(numInput.value);
+        const container = document.getElementById('containerGraficoTendencia');
+        const select = document.getElementById('tipoJogo');
+        const jogo = config[select.value];
+
+        if (!num || num < 1 || num > jogo.max) {
+            showToast(`Por favor, digite um número válido entre 1 e ${jogo.max}.`, "warning");
+            return;
+        }
+
+        container.style.display = 'block';
+        
+        // Busca histórico (últimos 50 sorteios para uma boa tendência)
+        const historico = await buscarHistoricoReal(select.value, 50);
+        if (!historico) {
+            showToast("Erro ao buscar dados para o gráfico.", "error");
+            return;
+        }
+
+        // Organiza cronologicamente (do antigo para o novo)
+        const cronologico = [...historico].reverse();
+        
+        // Calcula Média Móvel (Janela de 5 sorteios)
+        const labels = [];
+        const dataPoints = [];
+        const windowSize = 5;
+
+        for (let i = 0; i < cronologico.length; i++) {
+            if (i < windowSize - 1) continue; // Precisa de dados suficientes para a média
+
+            const slice = cronologico.slice(i - windowSize + 1, i + 1);
+            const count = slice.filter(sorteio => sorteio.includes(num)).length;
+            const freq = (count / windowSize) * 100; // Porcentagem de aparição na janela
+
+            labels.push(i + 1); // Índice relativo
+            dataPoints.push(freq);
+        }
+
+        // Renderiza Gráfico
+        const ctx = document.getElementById('graficoTendencia').getContext('2d');
+        if (chartTendenciaInstance) chartTendenciaInstance.destroy();
+
+        chartTendenciaInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: `Tendência do Nº ${num} (Média Móvel 5)`,
+                    data: dataPoints,
+                    borderColor: '#00d2ff',
+                    backgroundColor: 'rgba(0, 210, 255, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 0,
+                    pointHoverRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true, max: 100, ticks: { color: '#888', callback: v => v + '%' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+                    x: { display: false } // Oculta labels X para limpar visual
+                },
+                plugins: {
+                    legend: { labels: { color: '#ccc', font: { size: 10 } } },
+                    tooltip: {
+                        callbacks: {
+                            label: (ctx) => `Frequência Recente: ${ctx.raw.toFixed(0)}%`
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Matrix Rain Animation
+    const canvas = document.getElementById('matrixCanvas');
+    const ctx = canvas.getContext('2d');
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()';
+    const fontSize = 14;
+    const columns = canvas.width / fontSize;
+    const drops = Array(Math.floor(columns)).fill(1);
+
+    function drawMatrix() {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.fillStyle = '#00ff9d'; // Verde Neon Matrix
+        ctx.font = fontSize + 'px monospace';
+
+        for (let i = 0; i < drops.length; i++) {
+            const text = chars.charAt(Math.floor(Math.random() * chars.length));
+            ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+
+            if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                drops[i] = 0;
+            }
+            drops[i]++;
+        }
+    }
+    setInterval(drawMatrix, 33);
+    
+    window.addEventListener('resize', () => {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    });
+
+    function gerarJogoComExclusao(excluidos) {
+        const select = document.getElementById('tipoJogo');
+        const container = document.getElementById('resultado');
+        const btnCopiar = document.getElementById('btnCopiar');
+        let jogo = config[select.value];
+
+        // Validação de segurança
+        if (jogo.max - excluidos.length < jogo.qtd) {
+            showToast(`Impossível gerar jogo! Você está excluindo ${excluidos.length} números, restando apenas ${jogo.max - excluidos.length} disponíveis.`, "error");
+            return;
+        }
+
+        container.innerHTML = '<div class="spinner"></div>';
+        
+        let numeros = new Set();
+        const excluidosSet = new Set(excluidos);
+
+        while(numeros.size < jogo.qtd) {
+            let num = Math.floor(Math.random() * jogo.max) + 1;
+            if (!excluidosSet.has(num)) {
+                numeros.add(num);
+            }
+        }
+
+        container.innerHTML = '';
+        let numerosOrdenados = Array.from(numeros).sort((a, b) => a - b);
+
+        numerosOrdenados.forEach((n, i) => {
+            let div = document.createElement('div');
+            div.className = 'bola';
+            div.innerText = String(n).padStart(2, '0');
+            div.style.backgroundColor = jogo.color;
+            div.style.animationDelay = `${i * 0.1}s`;
+            container.appendChild(div);
+        });
+
+        adicionarAoHistorico("Sem Frios", numerosOrdenados, "#ff3333");
+        renderChart(numerosOrdenados);
+        
+        confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+    }
+
+    function limparCache() {
+        for (let key in cacheHistorico) delete cacheHistorico[key];
+        showToast("Cache de dados históricos limpo! A próxima geração buscará dados frescos.", "success");
+    }
+
+    function copiarPix() {
+        const chave = document.getElementById('chavePixTexto').innerText;
+        navigator.clipboard.writeText(chave).then(() => {
+            showToast("Chave PIX copiada com sucesso!", "success");
+        }).catch(() => {
+            showToast("Erro ao copiar chave. Tente selecionar manualmente.", "error");
+        });
+    }
+
+    function salvarConfiguracoesAvancadas() {
+        const qtd = document.getElementById('qtdAnaliseManual').value;
+        const aposta = document.getElementById('valorAposta').value;
+        
+        const config = {
+            qtdAnaliseManual: qtd,
+            valorAposta: aposta
+        };
+        
+        localStorage.setItem('botLoterias_configAvancada', JSON.stringify(config));
+        showToast("Configurações salvas com sucesso!", "success");
+        atualizarIndicadorAnalise();
+    }
+
+    function carregarConfiguracoesAvancadas() {
+        const saved = localStorage.getItem('botLoterias_configAvancada');
+        if (saved) {
+            const config = JSON.parse(saved);
+            if (config.qtdAnaliseManual) document.getElementById('qtdAnaliseManual').value = config.qtdAnaliseManual;
+            if (config.valorAposta) document.getElementById('valorAposta').value = config.valorAposta;
+        }
+        atualizarIndicadorAnalise();
+    }
+
+    function toggleAdvanced() {
+        const content = document.getElementById('advancedContent');
+        const arrow = document.getElementById('advArrow');
+        if (content.style.display === 'block') {
+            content.style.display = 'none';
+            arrow.innerText = '▼';
+        } else {
+            content.style.display = 'block';
+            arrow.innerText = '▲';
+        }
+    }
+
+    async function verificarSeJogoJaSaiu() {
+        const container = document.getElementById('resultado');
+        
+        // Captura os jogos gerados (suporta múltiplos ou único)
+        const rows = container.querySelectorAll('.game-row');
+        let jogosParaVerificar = [];
+        
+        if (rows.length > 0) {
+            rows.forEach((row, index) => {
+                const nums = Array.from(row.querySelectorAll('.bola')).map(b => parseInt(b.innerText));
+                jogosParaVerificar.push({ id: index + 1, numeros: nums });
+            });
+        } else {
+            const bolas = container.querySelectorAll('.bola');
+            if (bolas.length > 0) {
+                const nums = Array.from(bolas).map(b => parseInt(b.innerText));
+                jogosParaVerificar.push({ id: 1, numeros: nums });
+            }
+        }
+        
+        if (jogosParaVerificar.length === 0) {
+            showToast("Gere um jogo primeiro para verificar!", "warning");
+            return;
+        }
+
+        const btn = document.getElementById('btnVerificar');
+        const originalText = btn.innerText;
+        btn.innerText = "⏳ VERIFICANDO HISTÓRICO (1 ANO)...";
+        btn.disabled = true;
+
+        try {
+            const tipo = document.getElementById('tipoJogo').value;
+            // Busca todos os sorteios (endpoint sem ID retorna array completo na maioria das APIs wrappers)
+            const resp = await fetch(`https://loteriascaixa-api.herokuapp.com/api/${tipo}`);
+            const todosSorteios = await resp.json();
+            
+            if (!Array.isArray(todosSorteios)) throw new Error("Não foi possível obter o histórico completo.");
+
+            // Filtra último 1 ano
+            const hoje = new Date();
+            const umAnoAtras = new Date();
+            umAnoAtras.setFullYear(hoje.getFullYear() - 1);
+
+            const sorteiosFiltrados = todosSorteios.filter(s => {
+                const partes = s.data.split('/');
+                const dataSorteio = new Date(partes[2], partes[1] - 1, partes[0]);
+                return dataSorteio >= umAnoAtras;
+            });
+
+            let htmlContent = `<h3 style="color: #00d2ff; margin-top:0; border-bottom: 1px solid rgba(0, 210, 255, 0.3); padding-bottom: 10px;">🔍 VERIFICAÇÃO DE HISTÓRICO (1 ANO)</h3>
+                               <div style="max-height: 400px; overflow-y: auto; padding-right: 5px;">`;
+
+            jogosParaVerificar.forEach(jogo => {
+                let stats = { 11: 0, 12: 0, 13: 0, 14: 0, 15: 0 };
+                let encontrado = null;
+
+                sorteiosFiltrados.forEach(s => {
+                    const sorteioNums = s.dezenas.map(Number);
+                    const acertos = sorteioNums.filter(n => jogo.numeros.includes(n)).length;
+                    if (acertos >= 11 && acertos <= 15) stats[acertos]++;
+                    if (acertos === 15) encontrado = s;
+                });
+                
+                const statusColor = encontrado ? '#ff3333' : '#00ff9d';
+                const statusIcon = encontrado ? '⚠️' : '✅';
+                const statusText = encontrado ? `JÁ SAIU: Conc. ${encontrado.concurso} (${encontrado.data})` : '15 PONTOS: INÉDITO (Último Ano)';
+                
+                htmlContent += `
+                    <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <span style="font-weight: bold; color: #fff;">🎲 JOGO ${jogo.id}</span>
+                            <span style="font-size: 11px; color: ${statusColor}; border: 1px solid ${statusColor}; padding: 2px 6px; border-radius: 4px;">${statusIcon} ${statusText}</span>
+                        </div>
+                        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; text-align: center;">
+                            <div style="background: rgba(0,0,0,0.3); padding: 5px; border-radius: 4px;">
+                                <div style="font-size: 10px; color: #aaa;">14 Pts</div>
+                                <div style="color: #fff; font-weight: bold;">${stats[14]}x</div>
+                            </div>
+                            <div style="background: rgba(0,0,0,0.3); padding: 5px; border-radius: 4px;">
+                                <div style="font-size: 10px; color: #aaa;">13 Pts</div>
+                                <div style="color: #fff; font-weight: bold;">${stats[13]}x</div>
+                            </div>
+                            <div style="background: rgba(0,0,0,0.3); padding: 5px; border-radius: 4px;">
+                                <div style="font-size: 10px; color: #aaa;">12 Pts</div>
+                                <div style="color: #fff; font-weight: bold;">${stats[12]}x</div>
+                            </div>
+                            <div style="background: rgba(0,0,0,0.3); padding: 5px; border-radius: 4px;">
+                                <div style="font-size: 10px; color: #aaa;">11 Pts</div>
+                                <div style="color: #fff; font-weight: bold;">${stats[11]}x</div>
+                            </div>
+                        </div>
+                    </div>`;
+            });
+            
+            htmlContent += `</div>
+                            <div style="margin-top: 10px; font-size: 10px; color: #888; text-align: center;">
+                                * Análise baseada nos sorteios realizados nos últimos 365 dias.
+                            </div>`;
+
+            document.getElementById('detailsModalContent').innerHTML = htmlContent;
+            document.getElementById('detailsModal').style.display = 'flex';
+        } catch (e) {
+            showToast("Erro ao verificar histórico. Tente novamente mais tarde.", "error");
+        } finally {
+            btn.innerText = originalText;
+            btn.disabled = false;
+        }
+    }
+
+    // --- SISTEMA DE FAVORITOS (LOCALSTORAGE) ---
+
+    function salvarFavorito() {
+        const container = document.getElementById('resultado');
+        
+        // Captura os jogos atuais
+        const rows = container.querySelectorAll('.game-row');
+        let jogosParaSalvar = [];
+        
+        if (rows.length > 0) {
+            rows.forEach((row) => {
+                const nums = Array.from(row.querySelectorAll('.bola')).map(b => parseInt(b.innerText));
+                jogosParaSalvar.push(nums);
+            });
+        } else {
+            const bolas = container.querySelectorAll('.bola');
+            if (bolas.length > 0) {
+                const nums = Array.from(bolas).map(b => parseInt(b.innerText));
+                jogosParaSalvar.push(nums);
+            }
+        }
+
+        if (jogosParaSalvar.length === 0) {
+            showToast("Nenhum jogo na tela para salvar.", "warning");
+            return;
+        }
+
+        // Cria objeto do favorito
+        const novoFavorito = {
+            id: Date.now(),
+            data: new Date().toLocaleString(),
+            tipo: document.getElementById('tipoJogo').value,
+            jogos: jogosParaSalvar
+        };
+
+        // Salva no LocalStorage
+        let favoritos = JSON.parse(localStorage.getItem('botLoterias_favoritos') || '[]');
+        favoritos.unshift(novoFavorito); // Adiciona no topo
+        localStorage.setItem('botLoterias_favoritos', JSON.stringify(favoritos));
+
+        showToast("Jogos salvos nos Favoritos com sucesso!", "success");
+        renderizarFavoritos(); // Atualiza a lista se estiver visível
+    }
+
+    function showHome(event) {
+        if (event) event.preventDefault();
+        document.getElementById('home-view').style.display = 'grid';
+        document.getElementById('history-view').style.display = 'none';
+        document.getElementById('favorites-view').style.display = 'none';
+        document.getElementById('creator-view').style.display = 'none';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    async function showHistory(event) {
+        if (event) event.preventDefault();
+        
+        document.getElementById('home-view').style.display = 'none';
+        document.getElementById('history-view').style.display = 'block';
+        document.getElementById('favorites-view').style.display = 'none';
+        document.getElementById('creator-view').style.display = 'none';
+        
+        const lista = document.getElementById('listaHistoricoOficial');
+        if (lista.innerHTML.trim() === '' || lista.innerHTML.includes('Erro ao carregar')) {
+            await carregarHistoricoOficial();
+        }
+    }
+
+    let historicoOficialDados = [];
+    let historicoFiltrado = [];
+    let paginaAtualHistorico = 1;
+    const itensPorPagina = 20;
+
+    function showFavorites(event) {
+        if (event) event.preventDefault();
+
+        document.getElementById('home-view').style.display = 'none';
+        document.getElementById('history-view').style.display = 'none';
+        document.getElementById('favorites-view').style.display = 'block';
+        document.getElementById('creator-view').style.display = 'none';
+
+        const searchInput = document.getElementById('buscaFavoritos');
+        if(searchInput) searchInput.value = '';
+
+        renderizarFavoritos();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function showCreator(event) {
+        if (event) event.preventDefault();
+
+        document.getElementById('home-view').style.display = 'none';
+        document.getElementById('history-view').style.display = 'none';
+        document.getElementById('favorites-view').style.display = 'none';
+        document.getElementById('creator-view').style.display = 'block';
+
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    async function carregarHistoricoOficial() {
+        const container = document.getElementById('listaHistoricoOficial');
+        container.innerHTML = '<div class="spinner"></div><p style="text-align:center; color:#ccc; font-size:12px;">Carregando histórico de 1 ano... (Pode demorar alguns segundos)</p>';
+        
+        try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+            
+            const resp = await fetch('https://loteriascaixa-api.herokuapp.com/api/lotofacil', { signal: controller.signal });
+            clearTimeout(timeoutId);
+            
+            const todos = await resp.json();
+            
+            if (!Array.isArray(todos)) throw new Error("Formato inválido");
+
+            // Filtra último 1 ano
+            const hoje = new Date();
+            const umAnoAtras = new Date();
+            umAnoAtras.setFullYear(hoje.getFullYear() - 1);
+            
+            const filtrados = todos.filter(sorteio => {
+                // Parse DD/MM/YYYY
+                const partes = sorteio.data.split('/');
+                const dataSorteio = new Date(partes[2], partes[1] - 1, partes[0]);
+                return dataSorteio >= umAnoAtras;
+            });
+
+            if (filtrados.length === 0) {
+                container.innerHTML = '<p style="color:#ccc; text-align:center;">Nenhum sorteio encontrado no período.</p>';
+            } else {
+                // Ordena decrescente
+                filtrados.sort((a, b) => b.concurso - a.concurso);
+                
+                historicoOficialDados = filtrados;
+                historicoFiltrado = [...filtrados];
+                paginaAtualHistorico = 1;
+                atualizarResumoEstatistico();
+                renderizarPaginaHistorico(1);
+            }
+
+        } catch (e) {
+            console.error(e);
+            container.innerHTML = `
+                <div style="text-align: center; padding: 20px;">
+                    <p style="color: #ff3333; font-size:12px; margin-bottom: 10px;">Erro ao carregar histórico (API instável ou lenta).</p>
+                    <button onclick="carregarHistoricoOficial()" style="background: #ff3333; width: auto; padding: 8px 15px; font-size: 12px; box-shadow: none;">🔄 TENTAR NOVAMENTE</button>
+                </div>`;
+        }
+    }
+
+    function aplicarFiltroHistorico() {
+        const input = document.getElementById('filtroMesHistorico');
+        if (!input.value) return;
+        
+        const [ano, mes] = input.value.split('-').map(Number);
+        
+        historicoFiltrado = historicoOficialDados.filter(s => {
+            const partes = s.data.split('/'); // DD/MM/YYYY
+            return parseInt(partes[2]) === ano && parseInt(partes[1]) === mes;
+        });
+        
+        paginaAtualHistorico = 1;
+        atualizarResumoEstatistico();
+        renderizarPaginaHistorico(1);
+    }
+
+    function limparFiltroHistorico() {
+        document.getElementById('filtroMesHistorico').value = '';
+        historicoFiltrado = [...historicoOficialDados];
+        paginaAtualHistorico = 1;
+        atualizarResumoEstatistico();
+        renderizarPaginaHistorico(1);
+    }
+
+    function renderizarPaginaHistorico(pagina) {
+        const container = document.getElementById('listaHistoricoOficial');
+        
+        if (historicoFiltrado.length === 0) {
+            container.innerHTML = '<p style="color:#ccc; text-align:center; padding: 20px;">Nenhum sorteio encontrado com este filtro.</p>';
+            if (chartHistoricoPaginaInstance) chartHistoricoPaginaInstance.destroy();
+            return;
+        }
+
+        const totalPaginas = Math.ceil(historicoFiltrado.length / itensPorPagina);
+        
+        // Garante limites
+        if (pagina < 1) pagina = 1;
+        if (pagina > totalPaginas) pagina = totalPaginas;
+        paginaAtualHistorico = pagina;
+
+        const inicio = (pagina - 1) * itensPorPagina;
+        const fim = inicio + itensPorPagina;
+        const itensPagina = historicoFiltrado.slice(inicio, fim);
+        
+        const jogoConfig = config['lotofacil'];
+        let html = '';
+
+        // Renderiza Itens
+        itensPagina.forEach(s => {
+            html += `
+                <div class="fav-item" style="border-color: rgba(0, 210, 255, 0.2);">
+                    <div class="fav-header" style="color: #00d2ff;">
+                        <span>CONCURSO ${s.concurso}</span>
+                        <span>${s.data}</span>
+                    </div>
+                    <div style="display: flex; gap: 3px; flex-wrap: wrap; justify-content: center; margin-top: 5px;">
+                        ${s.dezenas.map(n => `<div class="bola-small" style="background-color: ${jogoConfig.color}; box-shadow: 0 0 5px ${jogoConfig.color};">${n}</div>`).join('')}
+                    </div>
+                </div>
+            `;
+        });
+
+        // Controles de Paginação
+        if (totalPaginas > 1) {
+            html += `
+                <div style="display: flex; justify-content: center; align-items: center; gap: 15px; margin-top: 20px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1);">
+                    <button onclick="mudarPaginaHistorico(-1)" ${pagina === 1 ? 'disabled style="opacity:0.5; cursor:not-allowed;"' : ''} style="width: auto; padding: 8px 15px; font-size: 12px;">◀ ANTERIOR</button>
+                    <span style="color: #00d2ff; font-size: 12px; font-weight: bold;">PÁGINA ${pagina} DE ${totalPaginas}</span>
+                    <button onclick="mudarPaginaHistorico(1)" ${pagina === totalPaginas ? 'disabled style="opacity:0.5; cursor:not-allowed;"' : ''} style="width: auto; padding: 8px 15px; font-size: 12px;">PRÓXIMA ▶</button>
+                </div>
+            `;
+        }
+
+        container.innerHTML = html;
+
+        // --- GRÁFICO DE FREQUÊNCIA DA PÁGINA ---
+        const frequenciaPagina = {};
+        itensPagina.forEach(sorteio => {
+            sorteio.dezenas.forEach(n => {
+                const num = parseInt(n);
+                frequenciaPagina[num] = (frequenciaPagina[num] || 0) + 1;
+            });
+        });
+
+        if (chartHistoricoPaginaInstance) chartHistoricoPaginaInstance.destroy();
+        
+        const ctxFreq = document.getElementById('graficoFrequenciaPagina').getContext('2d');
+        const labels = Array.from({length: jogoConfig.max}, (_, i) => i + 1);
+        const dataValues = labels.map(n => frequenciaPagina[n] || 0);
+        
+        chartHistoricoPaginaInstance = new Chart(ctxFreq, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Vezes Sorteado na Página',
+                    data: dataValues,
+                    backgroundColor: jogoConfig.color,
+                    borderRadius: 3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                onHover: (event, chartElement) => {
+                    event.native.target.style.cursor = chartElement.length ? 'pointer' : 'default';
+                },
+                onClick: (e, activeEls) => {
+                    if (activeEls.length > 0) {
+                        const index = activeEls[0].index;
+                        destacarNumeroHistorico(labels[index]);
+                    } else {
+                        limparDestaqueHistorico();
+                    }
+                },
+                scales: {
+                    y: { beginAtZero: true, ticks: { color: '#ccc', stepSize: 1, callback: function(value) {if (value % 1 === 0) {return value;}} }, grid: { color: 'rgba(255,255,255,0.1)' } },
+                    x: { ticks: { color: '#ccc', font: { size: 10 } }, grid: { display: false } }
+                },
+                plugins: { 
+                    legend: { display: false },
+                    tooltip: { callbacks: { label: (ctx) => `Vezes Sorteado: ${ctx.raw}` } }
+                }
+            }
+        });
+        // --- FIM GRÁFICO ---
+
+        // Rola suavemente para o topo da lista
+        document.getElementById('history-view').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function atualizarResumoEstatistico() {
+        const container = document.getElementById('resumoEstatistico');
+        if (!historicoFiltrado || historicoFiltrado.length === 0) {
+            container.style.display = 'none';
+            return;
+        }
+
+        let somaTotal = 0;
+        let paresTotal = 0;
+        let totalJogos = historicoFiltrado.length;
+        const jogoConfig = config['lotofacil'];
+
+        historicoFiltrado.forEach(jogo => {
+            const nums = jogo.dezenas.map(Number);
+            somaTotal += nums.reduce((a, b) => a + b, 0);
+            paresTotal += nums.filter(n => n % 2 === 0).length;
+        });
+
+        const mediaSoma = (somaTotal / totalJogos).toFixed(1);
+        const mediaPares = (paresTotal / totalJogos).toFixed(1);
+        const mediaImpares = (jogoConfig.qtd - mediaPares).toFixed(1);
+
+        container.style.display = 'flex';
+        container.innerHTML = `
+            <div style="text-align: center;"><div style="font-size: 10px; color: #aaa; text-transform: uppercase;">JOGOS</div><div style="font-size: 16px; color: #fff; font-weight: bold;">${totalJogos}</div></div>
+            <div style="text-align: center;"><div style="font-size: 10px; color: #aaa; text-transform: uppercase;">MÉDIA SOMA</div><div style="font-size: 16px; color: #ffd700; font-weight: bold;">${mediaSoma}</div></div>
+            <div style="text-align: center;"><div style="font-size: 10px; color: #aaa; text-transform: uppercase;">MÉDIA PARES</div><div style="font-size: 16px; color: #00d2ff; font-weight: bold;">${mediaPares}</div></div>
+            <div style="text-align: center;"><div style="font-size: 10px; color: #aaa; text-transform: uppercase;">MÉDIA ÍMPARES</div><div style="font-size: 16px; color: #ff00cc; font-weight: bold;">${mediaImpares}</div></div>
+        `;
+    }
+
+    function destacarNumeroHistorico(numero) {
+        const container = document.getElementById('listaHistoricoOficial');
+        const bolas = container.querySelectorAll('.bola-small');
+        
+        bolas.forEach(bola => {
+            const val = parseInt(bola.innerText);
+            if (val === numero) {
+                bola.style.opacity = '1';
+                bola.style.transform = 'scale(1.3)';
+                bola.style.zIndex = '10';
+                bola.style.boxShadow = '0 0 15px #fff';
+                bola.style.border = '1px solid #fff';
+                bola.style.transition = 'all 0.3s ease';
+            } else {
+                bola.style.opacity = '0.1';
+                bola.style.transform = 'scale(0.9)';
+                bola.style.zIndex = '1';
+                bola.style.boxShadow = 'none';
+                bola.style.border = 'none';
+                bola.style.transition = 'all 0.3s ease';
+            }
+        });
+    }
+
+    function limparDestaqueHistorico() {
+        const container = document.getElementById('listaHistoricoOficial');
+        const bolas = container.querySelectorAll('.bola-small');
+        const jogoConfig = config['lotofacil'];
+        
+        bolas.forEach(bola => {
+            bola.style.opacity = '1';
+            bola.style.transform = 'scale(1)';
+            bola.style.zIndex = 'auto';
+            bola.style.boxShadow = `0 0 5px ${jogoConfig.color}`;
+            bola.style.border = 'none';
+        });
+    }
+
+    function mudarPaginaHistorico(delta) {
+        renderizarPaginaHistorico(paginaAtualHistorico + delta);
+    }
+
+    function renderizarFavoritos() {
+        const lista = document.getElementById('listaFavoritos');
+        const favoritos = JSON.parse(localStorage.getItem('botLoterias_favoritos') || '[]');
+        const jogoConfig = config['lotofacil']; // Assumindo Lotofácil como padrão
+        const termo = document.getElementById('buscaFavoritos') ? document.getElementById('buscaFavoritos').value.toLowerCase() : '';
+
+        if (favoritos.length === 0) {
+            lista.innerHTML = '<p style="color: #666; font-size: 12px; text-align: center;">Nenhum favorito salvo.</p>';
+            return;
+        }
+
+        const filtrados = favoritos.filter(fav => {
+            if (!termo) return true;
+            if (fav.data.toLowerCase().includes(termo)) return true;
+            const numerosStr = fav.jogos.map(j => j.join(' ')).join(' ');
+            if (numerosStr.includes(termo)) return true;
+            return false;
+        });
+
+        if (filtrados.length === 0) {
+            lista.innerHTML = '<p style="color: #666; font-size: 12px; text-align: center;">Nenhum favorito encontrado.</p>';
+            return;
+        }
+
+        lista.innerHTML = filtrados.map(fav => `
+            <div class="fav-item">
+                <div class="fav-header">
+                    <span>📅 ${fav.data}</span>
+                    <span>${fav.jogos.length} Jogo(s)</span>
+                </div>
+                <button class="btn-load-fav" onclick="carregarFavorito(${fav.id})" title="Carregar Jogo">📂</button>
+                <button class="btn-delete-fav" onclick="excluirFavorito(${fav.id})">🗑️</button>
+                <div style="display: flex; flex-direction: column; gap: 5px; margin-top: 5px;">
+                    ${fav.jogos.map(jogo => `
+                        <div style="display: flex; gap: 3px; flex-wrap: wrap;">
+                            ${jogo.map(n => `<div class="bola-small" style="width: 20px; height: 20px; font-size: 10px; background-color: ${jogoConfig.color};">${n}</div>`).join('')}
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function carregarFavorito(id) {
+        let favoritos = JSON.parse(localStorage.getItem('botLoterias_favoritos') || '[]');
+        const fav = favoritos.find(f => f.id === id);
+        
+        if (!fav) return;
+
+        const container = document.getElementById('resultado');
+        const btnCopiar = document.getElementById('btnCopiar');
+        const btnSimular = document.getElementById('btnSimularLucro');
+        const jogoConfig = config['lotofacil']; 
+
+        container.innerHTML = '';
+
+        if (fav.jogos.length > 1) {
+            fav.jogos.forEach((jogo, i) => {
+                const row = document.createElement('div');
+                row.className = 'game-row';
+                row.innerHTML = `<div class="game-label">JOGO ${i+1}</div>`;
+                jogo.forEach((n, j) => {
+                    row.innerHTML += `<div class="bola" style="width:35px; height:35px; font-size:14px; background-color:${jogoConfig.color}; animation-delay:${j*0.05}s">${String(n).padStart(2, '0')}</div>`;
+                });
+                container.appendChild(row);
+            });
+        } else if (fav.jogos.length === 1) {
+            fav.jogos[0].forEach((n, i) => {
+                let div = document.createElement('div');
+                div.className = 'bola';
+                div.innerText = String(n).padStart(2, '0');
+                div.style.backgroundColor = jogoConfig.color;
+                div.style.animationDelay = `${i * 0.1}s`;
+                container.appendChild(div);
+            });
+        }
+
+        btnCopiar.style.display = 'block';
+        btnSimular.style.display = 'block';
+        
+        showHome(); // Volta para a tela inicial
+        setTimeout(() => document.querySelector('.right-column').scrollIntoView({ behavior: 'smooth' }), 100);
+        showToast("Jogo carregado com sucesso!", "success");
+    }
+
+    function excluirFavorito(id) {
+        if(!confirm("Tem certeza que deseja excluir este favorito?")) return;
+        
+        let favoritos = JSON.parse(localStorage.getItem('botLoterias_favoritos') || '[]');
+        favoritos = favoritos.filter(f => f.id !== id);
+        localStorage.setItem('botLoterias_favoritos', JSON.stringify(favoritos));
+        
+        renderizarFavoritos();
+        showToast("Favorito excluído.", "info");
+    }
+
+    function showToast(message, type = 'info') {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        
+        let icon = 'ℹ️';
+        if (type === 'success') icon = '✅';
+        if (type === 'error') icon = '❌';
+        if (type === 'warning') icon = '⚠️';
+        
+        toast.innerHTML = `<span style="font-size: 16px;">${icon}</span> <span style="line-height: 1.4;">${message.replace(/\n/g, '<br>')}</span>`;
+        
+        container.appendChild(toast);
+        setTimeout(() => toast.remove(), 5000);
+    }
+
+    function atualizarIndicadorAnalise() {
+        const div = document.getElementById('indicadorAnalise');
+        const estrategiaExtra = document.getElementById('estrategiaExtra').value;
+        const btnSimular = document.getElementById('btnSimularLucro');
+        const manualQtdInput = document.getElementById('qtdAnaliseManual');
+
+        // Atualiza texto do botão de simulação
+        let qtdSimulacao = 10;
+        if (manualQtdInput && manualQtdInput.value && parseInt(manualQtdInput.value) > 0) {
+            qtdSimulacao = parseInt(manualQtdInput.value);
+        } else {
+            qtdSimulacao = Math.max(10, qtdResultadosOficiais);
+        }
+        
+        if (btnSimular && !btnSimular.disabled && !btnSimular.innerText.includes('CALCULANDO')) {
+            btnSimular.innerText = `💸 SIMULAR LUCRO (ÚLTIMOS ${qtdSimulacao})`;
+        }
+        
+        // Estratégias que usam dados reais
+        const usaAnalise = ['sistema_porcentagem', 'grafico_sorteios', 'vizinhos_consecutivos', 'sistema_rotacao', 'ia_neural', 'ia_hibrida'].includes(estrategiaExtra);
+        
+        if (!usaAnalise) {
+            div.style.display = 'none';
+            return;
+        }
+
+        const baseQtd = (estrategiaExtra === 'grafico_sorteios' || estrategiaExtra === 'sistema_rotacao' || estrategiaExtra === 'ia_neural' || estrategiaExtra === 'ia_hibrida') ? 50 : 10;
+        
+        let qtd;
+        let textoExtra = "";
+
+        if (manualQtdInput && manualQtdInput.value && parseInt(manualQtdInput.value) > 0) {
+            qtd = parseInt(manualQtdInput.value);
+            textoExtra = "(Manual)";
+        } else {
+            qtd = Math.max(baseQtd, qtdResultadosOficiais);
+            if (qtd > baseQtd) textoExtra = "(Expandido)";
+            else textoExtra = "(Padrão)";
+        }
+
+        div.style.display = 'block';
+        div.innerHTML = `ℹ️ Analisando <strong>${qtd}</strong> concursos passados ${textoExtra}`;
+    }
+
+    function openHelpModal() {
+        document.getElementById('helpModal').style.display = 'flex';
+    }
+
+    function closeHelpModal() {
+        document.getElementById('helpModal').style.display = 'none';
+    }
+
+    function verDetalhesIA() {
+        if (!ultimoScoreIA || ultimoScoreIA.length === 0) return;
+
+        const modal = document.getElementById('detailsModal');
+        const content = document.getElementById('detailsModalContent');
+        
+        let html = `<h3 style="color: #b026ff; margin-top:0; border-bottom: 1px solid rgba(176, 38, 255, 0.3); padding-bottom: 10px;">🧠 DETALHES DA REDE NEURAL</h3>
+                    <p style="font-size:12px; color:#ccc; margin-bottom: 15px;">Entenda como a pontuação (Score) foi calculada para os 15 números escolhidos (Ordenados por relevância).</p>
+                    <div style="max-height: 300px; overflow-y: auto;">
+                        <table class="stats-table" style="width:100%;">
+                            <thead>
+                                <tr>
+                                    <th>Nº</th>
+                                    <th>SCORE</th>
+                                    <th>RECÊNCIA (10)</th>
+                                    <th>CONSIST. (Total)</th>
+                                    <th>ATRASO</th>
+                                </tr>
+                            </thead>
+                            <tbody>`;
+        
+        ultimoScoreIA.forEach(item => {
+            html += `<tr>
+                        <td><strong style="color:#fff;">${String(item.numero).padStart(2,'0')}</strong></td>
+                        <td style="color:#00d2ff; font-weight:bold;">${item.pontuacao.toFixed(1)}</td>
+                        <td>${item.detalhes.curto}x</td>
+                        <td>${item.detalhes.longo}x</td>
+                        <td>${item.detalhes.atraso}</td>
+                     </tr>`;
+        });
+        
+        html += `</tbody></table></div>
+                 <div style="margin-top:15px; font-size:11px; color:#888; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
+                    * <strong>Score:</strong> Soma ponderada dos fatores.<br>
+                    * <strong>Recência:</strong> Peso 3.0 (Últimos 10 jogos).<br>
+                    * <strong>Consistência:</strong> Peso proporcional à frequência total.<br>
+                    * <strong>Atraso:</strong> Bônus para números "maduros".
+                 </div>`;
+
+        content.innerHTML = html;
+        modal.style.display = 'flex';
+    }
+
+    function closeDetailsModal() {
+        document.getElementById('detailsModal').style.display = 'none';
+    }
+
+    window.onclick = function(event) {
+        const modal = document.getElementById('helpModal');
+        if (event.target == modal) {
+            modal.style.display = 'none';
+        }
+        const helpModal = document.getElementById('helpModal');
+        const detailsModal = document.getElementById('detailsModal');
+        if (event.target == helpModal) helpModal.style.display = 'none';
+        if (event.target == detailsModal) detailsModal.style.display = 'none';
+    }
+
+    // Carrega resultados oficiais e estatísticas automaticamente ao iniciar
+    document.addEventListener('DOMContentLoaded', () => {
+        consultarSorteioOficial();
+        verEstatisticas();
+        carregarConfiguracoesAvancadas();
+        atualizarIndicadorAnalise();
+    });
+</script>
+
+</body>
+</html>

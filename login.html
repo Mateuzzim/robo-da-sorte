@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Robô da Sorte</title>
+    <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Exo 2', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: radial-gradient(circle at top, #1b2735 0%, #090a0f 100%);
+            color: #e0e6ed;
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+        .split-left {
+            flex: 1;
+            position: relative;
+            box-shadow: 5px 0 30px rgba(0,0,0,0.8);
+            z-index: 2;
+            overflow: hidden;
+        }
+        .parallax-bg {
+            position: absolute;
+            top: -5%; left: -5%; width: 110%; height: 110%;
+            background: url('https://i.pinimg.com/736x/7e/00/cb/7e00cb1fb221d669f2cb8d4a1022559b.jpg') no-repeat center center;
+            background-size: cover;
+            z-index: 1;
+            transition: transform 0.1s ease-out;
+            animation: slideInImage 1.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+        #particlesCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+        }
+        .split-right {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle at top, #1b2735 0%, #090a0f 100%);
+            position: relative;
+        }
+        .login-card {
+            background: rgba(20, 25, 40, 0.7);
+            border: 1px solid rgba(0, 210, 255, 0.3);
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.8);
+            text-align: center;
+            max-width: 350px;
+            width: 90%;
+            backdrop-filter: blur(10px);
+            animation: fadeIn 0.8s ease-out;
+        }
+        h2 { color: #00d2ff; margin: 10px 0 30px; text-transform: uppercase; letter-spacing: 1px; }
+        input {
+            width: 100%; padding: 12px; margin-bottom: 15px;
+            background: rgba(0, 0, 0, 0.4); border: 1px solid #334;
+            color: #fff; border-radius: 5px; box-sizing: border-box;
+            font-family: 'Exo 2', sans-serif; text-align: center;
+            transition: 0.3s;
+        }
+        input:focus { border-color: #00d2ff; box-shadow: 0 0 15px rgba(0, 210, 255, 0.2); outline: none; }
+        button {
+            width: 100%; padding: 12px;
+            background: linear-gradient(90deg, #00d2ff, #007bff);
+            color: white; border: none; border-radius: 5px;
+            font-weight: bold; cursor: pointer; text-transform: uppercase;
+            transition: 0.3s; box-shadow: 0 0 15px rgba(0, 210, 255, 0.4);
+        }
+        button:hover { transform: translateY(-2px); box-shadow: 0 0 25px rgba(0, 210, 255, 0.7); }
+        .error { color: #ff3333; font-size: 12px; margin-top: 15px; display: none; animation: shake 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+        @media (max-width: 600px) {
+            body { flex-direction: column; }
+            .split-left { height: 30vh; width: 100%; flex: none; }
+            .split-right { height: 70vh; width: 100%; }
+        }
+        .cursor { display: inline-block; width: 3px; height: 1em; background-color: #00d2ff; vertical-align: text-bottom; animation: blink 1s infinite; margin-left: 2px; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+        @keyframes slideInImage { from { left: -100%; opacity: 0; } to { left: -5%; opacity: 1; } }
+        @keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(5px); z-index: 2000; display: flex; align-items: center; justify-content: center; animation: fadeIn 0.3s ease; }
+        .modal-content { background: rgba(20, 25, 40, 0.95); border: 1px solid rgba(0, 210, 255, 0.3); padding: 30px; border-radius: 15px; max-width: 500px; width: 90%; position: relative; box-shadow: 0 0 50px rgba(0, 0, 0, 0.8); animation: slideUp 0.3s ease; text-align: left; }
+        .close-modal { position: absolute; top: 10px; right: 15px; color: #aaa; font-size: 28px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .close-modal:hover { color: #fff; }
+        .terms-text { max-height: 300px; overflow-y: auto; color: #e0e6ed; font-size: 13px; line-height: 1.6; margin-top: 15px; padding-right: 10px; }
+        .terms-link { color: #00d2ff; text-decoration: none; font-size: 11px; margin-top: 10px; display: inline-block; border-bottom: 1px dashed #00d2ff; cursor: pointer; transition: 0.3s; }
+        .terms-link:hover { color: #fff; border-bottom-color: #fff; }
+        .creator-name {
+            font-size: 18px; color: #00d2ff; margin-top: 5px; font-weight: 600;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.9);
+            animation: textShine 2s ease-in-out infinite;
+        }
+        @keyframes textShine {
+            0%, 100% { text-shadow: 0 0 5px rgba(0, 210, 255, 0.5); color: #00d2ff; }
+            50% { text-shadow: 0 0 20px rgba(0, 210, 255, 1), 0 0 30px rgba(0, 210, 255, 0.8); color: #e0f7ff; }
+        }
+    </style>
+</head>
+<body>
+    <div class="split-left">
+        <div class="parallax-bg"></div>
+        <canvas id="particlesCanvas"></canvas>
+        <div style="position: absolute; bottom: 20px; left: 0; width: 100%; text-align: center; z-index: 3;">
+            <div style="font-size: 14px; color: #fff; letter-spacing: 3px; font-weight: 800; text-transform: uppercase; text-shadow: 0 2px 10px rgba(0,0,0,0.9);">Criador da Ferramenta</div>
+            <div class="creator-name">Mateus Oliveira</div>
+        </div>
+    </div>
+    <div class="split-right">
+        <div class="login-card">
+            <h2 id="typing-title" style="min-height: 30px;"></h2>
+            <div style="margin-bottom: 20px; display: flex; align-items: center; justify-content: center; gap: 10px; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 5px; border: 1px solid rgba(255,255,255,0.1);">
+                <input type="checkbox" id="agreeCheckbox" onchange="toggleLoginButton()" style="width: 18px; height: 18px; padding: 0; margin: 0; cursor: pointer; accent-color: #00d2ff;">
+                <label for="agreeCheckbox" style="font-size: 12px; color: #ccc; cursor: pointer; user-select: none;">Concordo que sou maior de 18 anos</label>
+            </div>
+            <button id="btnLogin" onclick="login()" disabled style="opacity: 0.5; cursor: not-allowed;">ENTRAR NO SISTEMA</button>
+            <div style="margin-top: 25px; border-top: 1px solid rgba(0, 210, 255, 0.2); padding-top: 15px; font-size: 11px; color: #8899a6; line-height: 1.5;">
+                <p style="margin: 0 0 8px 0; color: #ff3333; font-weight: bold; font-size: 12px;">🔞 PROIBIDO PARA MENORES DE 18 ANOS</p>
+                <p style="margin: 0;">O <strong>Robô da Sorte</strong> utiliza inteligência artificial para gerar combinações estatísticas. Jogue com responsabilidade.</p>
+                <a onclick="openTermsModal()" class="terms-link">Ler Termos de Uso</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Termos de Uso -->
+    <div id="termsModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeTermsModal()">&times;</span>
+            <h2 style="color: #00d2ff; margin-top: 0; border-bottom: 1px solid rgba(0, 210, 255, 0.3); padding-bottom: 10px;">📜 TERMOS DE USO</h2>
+            <div class="terms-text">
+                <p><strong>1. Maioridade:</strong> Este sistema é estritamente proibido para menores de 18 anos, conforme legislação vigente.</p>
+                <p><strong>2. Natureza do Sistema:</strong> O Robô da Sorte é uma ferramenta de análise estatística e probabilística. Não garantimos ganhos financeiros. Loteria é um jogo de azar e os resultados dependem exclusivamente da sorte.</p>
+                <p><strong>3. Responsabilidade:</strong> O uso das informações geradas é de total responsabilidade do usuário. Não nos responsabilizamos por perdas financeiras decorrentes de apostas.</p>
+                <p><strong>4. Jogo Responsável:</strong> Aposte apenas o que pode perder. Se o jogo deixar de ser diversão e passar a ser um problema, procure ajuda.</p>
+                <p><strong>5. Propriedade Intelectual:</strong> Todo o código e design desta ferramenta são protegidos por direitos autorais.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function login() {
+            sessionStorage.setItem('sessao_ativa', 'true');
+            window.location.href = 'index.html';
+        }
+
+        function toggleLoginButton() {
+            const checkbox = document.getElementById('agreeCheckbox');
+            const btn = document.getElementById('btnLogin');
+            if (checkbox.checked) {
+                btn.disabled = false;
+                btn.style.opacity = '1';
+                btn.style.cursor = 'pointer';
+            } else {
+                btn.disabled = true;
+                btn.style.opacity = '0.5';
+                btn.style.cursor = 'not-allowed';
+            }
+        }
+
+        function openTermsModal() {
+            document.getElementById('termsModal').style.display = 'flex';
+        }
+
+        function closeTermsModal() {
+            document.getElementById('termsModal').style.display = 'none';
+        }
+
+        document.addEventListener('mousemove', (e) => {
+            const bg = document.querySelector('.parallax-bg');
+            const x = (window.innerWidth / 2 - e.pageX) / 40;
+            const y = (window.innerHeight / 2 - e.pageY) / 40;
+            bg.style.transform = `translate(${x}px, ${y}px)`;
+        });
+
+        // Efeito de Partículas
+        const canvas = document.getElementById('particlesCanvas');
+        const ctx = canvas.getContext('2d');
+        let particlesArray = [];
+
+        function resizeCanvas() {
+            canvas.width = canvas.parentElement.offsetWidth;
+            canvas.height = canvas.parentElement.offsetHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 2 + 0.5;
+                this.speedX = Math.random() * 0.5 - 0.25;
+                this.speedY = Math.random() * 0.5 - 0.25;
+                this.opacity = Math.random() * 0.5 + 0.1;
+            }
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                
+                // Faz as partículas reaparecerem do outro lado
+                if (this.x < 0) this.x = canvas.width;
+                if (this.x > canvas.width) this.x = 0;
+                if (this.y < 0) this.y = canvas.height;
+                if (this.y > canvas.height) this.y = 0;
+            }
+            draw() {
+                ctx.fillStyle = `rgba(0, 210, 255, ${this.opacity})`;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function initParticles() {
+            particlesArray = [];
+            for (let i = 0; i < 80; i++) {
+                particlesArray.push(new Particle());
+            }
+        }
+
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let i = 0; i < particlesArray.length; i++) {
+                particlesArray[i].update();
+                particlesArray[i].draw();
+            }
+            requestAnimationFrame(animateParticles);
+        }
+
+        initParticles();
+        animateParticles();
+
+        // Efeito de Digitação
+        const titleText = "ROBÔ DA SORTE";
+        const titleElement = document.getElementById('typing-title');
+        let charIndex = 0;
+
+        function typeWriter() {
+            if (charIndex < titleText.length) {
+                titleElement.innerHTML = titleText.substring(0, charIndex + 1) + '<span class="cursor"></span>';
+                charIndex++;
+                setTimeout(typeWriter, 100);
+            }
+        }
+
+        setTimeout(typeWriter, 500);
+    </script>
+</body>
+</html>
